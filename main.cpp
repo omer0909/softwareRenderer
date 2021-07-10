@@ -17,8 +17,8 @@ struct tris
     int v1;
     int v2;
 };
-const int with = 800;
-const int height = 480;
+const int with = 400;
+const int height = 240;
 const float focalLegenth = height * 1;
 const int trisSize = 967;
 const int vertexSize = 507;
