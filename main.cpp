@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <time.h>
 struct vector2
 {
     float x;
@@ -24,7 +25,7 @@ const int trisSize = 967;
 const int vertexSize = 507;
 vector3 campos = {0.0f, 0.0f, -3.0f};
 
-vector3 vertices[vertexSize] = {
+const vector3 vertices[vertexSize] = {
     {-0.665922f, 0.164062f, -0.578045f},
     {0.159924f, 0.164062f, -0.867186f},
     {-0.699095f, 0.093750f, -0.483656f},
@@ -533,7 +534,7 @@ vector3 vertices[vertexSize] = {
     {-0.684600f, 0.382812f, 0.645286f},
     {0.937599f, 0.382812f, 0.07733f}};
 
-vector3 normals[vertexSize] = {
+const vector3 normals[vertexSize] = {
     {-0.7520f, -0.6566f, 0.0583f},
     {0.6241f, -0.6566f, -0.4234f},
     {-0.7746f, -0.5104f, -0.3735f},
@@ -1042,7 +1043,7 @@ vector3 normals[vertexSize] = {
     {0.7739f, 0.5846f, 0.2433f},
     {-0.4532f, 0.5846f, 0.6729f}};
 
-tris triangles[trisSize] = {
+const tris triangles[trisSize] = {
     {46, 2, 44},
     {3, 47, 45},
     {44, 4, 42},
@@ -2118,6 +2119,7 @@ sf::Color setPixel(int x, int y)
 
 int main()
 {
+
     sf::RenderWindow window(sf::VideoMode(with, height), "Window");
     sf::Image image;
     image.create(with, height);
@@ -2127,6 +2129,8 @@ int main()
     sf::Sprite sprite(texture);
     while (window.isOpen())
     {
+        clock_t start = clock();
+
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -2175,6 +2179,10 @@ int main()
         sf::Sprite sprite(texture);
         window.draw(sprite);
         window.display();
+
+        clock_t finish = clock();
+        double duration = (double)(finish - start) / CLOCKS_PER_SEC;
+        std::cout<<"frame time: " << duration << std::endl;
     }
     return 0;
 }
