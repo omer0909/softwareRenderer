@@ -18,12 +18,18 @@ struct tris
     int v1;
     int v2;
 };
-const int with = 400;
-const int height = 240;
+const int with = 1920;
+const int height = 1080;
 const float focalLegenth = height * 1;
 const int trisSize = 967;
 const int vertexSize = 507;
-vector3 campos = {0.0f, 0.0f, -3.0f};
+vector3 campos = {0.0f, 0.0f, -4.0f};
+const sf::Color backroundColor = sf::Color::Black;
+
+const int halfWith = with / 2;
+const int halfHeight = height / 2;
+float zBuffer[with][height];
+sf::Image image;
 
 const vector3 vertices[vertexSize] = {
     {-0.665922f, 0.164062f, -0.578045f},
@@ -2011,109 +2017,165 @@ const tris triangles[trisSize] = {
     {504, 506, 314},
     {319, 321, 503},
     {504, 322, 320}};
-
+void clearZBuffer()
+{
+    for (unsigned int x = 0; x < with; x++)
+        for (unsigned int y = 0; y < height; y++)
+            zBuffer[x][y] = 10000.0f;
+}
+void clearImage()
+{
+    for (unsigned int x = 0; x < with; x++)
+        for (unsigned int y = 0; y < height; y++)
+            image.setPixel(x, y, backroundColor);
+}
 vector2 worldToScreenPoint(vector3 pos)
 {
     float x = ((-pos.x - campos.x) / ((pos.z - campos.z) / focalLegenth));
     float y = ((-pos.y - campos.y) / ((pos.z - campos.z) / focalLegenth));
-    return {x + with / 2, y + height / 2};
+    return {x + halfWith, y + halfHeight};
 }
-float absolute(float value)
+sf::Color normalToColor(vector3 normal)
 {
-    if (value > 0)
-    {
-        return value;
-    }
-    else
-    {
-        return -value;
-    }
+    return sf::Color((normal.x + 1) * 128, (normal.y + 1) * 128, (normal.z + 1) * 128, 255);
 }
-float controlFunction(vector2 first, vector2 second, vector2 pos, vector2 point)
+bool controlFunctionPoint(vector2 a, vector2 b, vector2 point)
 {
-    float tolorance = first.x - second.x;
+    float tolorance = a.x - b.x;
     if (tolorance < 0.00001f && tolorance > -0.00001f)
-    {
-        if (first.y < second.y)
-        {
-            return (first.x - pos.x) / absolute(first.x - point.x);
-        }
-        else
-        {
-            return (pos.x - first.x) / absolute(point.x - first.x);
-        }
-    }
+        return ((a.x - point.x) > 0) == (a.y < b.y);
 
-    float inclination = (first.y - second.y) / (first.x - second.x);
-    float add = first.y - (first.x * inclination);
+    float inclination = (b.y - a.y) / (b.x - a.x);
+    float add = a.y - (a.x * inclination);
 
-    float posResut = ((pos.x * inclination) + add) - pos.y;
-    float pointResult = point.y - ((point.x * inclination) + add);
-    if (first.x > second.x)
-    {
-
-        return posResut / absolute(pointResult);
-    }
-    else
-    {
-        return -posResut / absolute(pointResult);
-    }
+    return ((point.x * inclination) + add < point.y) == (a.x < b.x);
 }
-sf::Color normalToColor(float c0, float c1, float c2, vector3 n0, vector3 n1, vector3 n2)
+vector3 vector3Lerp(const vector3 a, const vector3 b, const float val)
 {
-    float normalX = c0 * n0.x + c1 * n1.x + c2 * n2.x;
-    float normalY = c0 * n0.y + c1 * n1.y + c2 * n2.y;
-    float normalZ = c0 * n0.z + c1 * n1.z + c2 * n2.z;
-
-    normalX = normalX * 0.5f + 0.5f;
-    normalY = normalY * 0.5f + 0.5f;
-    normalZ = normalZ * 0.5f + 0.5f;
-
-    return sf::Color(normalX * 128, normalY * 128, normalZ * 128, 255);
+    const float val2 = 1 - val;
+    return {a.x * val + b.x * val2,
+            a.y * val + b.y * val2,
+            a.z * val + b.z * val2};
 }
-sf::Color setPixel(int x, int y)
+void draw()
 {
-    bool contactTris = 0;
-    int trisIndex = 0;
-    float minDepth = std::numeric_limits<float>::max();
-    vector3 rate;
+    clearZBuffer();
+    clearImage();
     for (int t = 0; t < trisSize; t++)
     {
-        vector2 pos = {(float)x, (float)y};
+        const vector3 worldPos[3] = {
+            vertices[triangles[t].v0],
+            vertices[triangles[t].v1],
+            vertices[triangles[t].v2]};
 
-        vector3 worldPos0 = vertices[triangles[t].v0];
-        vector3 worldPos1 = vertices[triangles[t].v1];
-        vector3 worldPos2 = vertices[triangles[t].v2];
+        const vector2 cTris2d[3] = {
+            worldToScreenPoint(worldPos[0]),
+            worldToScreenPoint(worldPos[1]),
+            worldToScreenPoint(worldPos[2])};
 
-        vector2 v0 = worldToScreenPoint(worldPos0);
-        vector2 v1 = worldToScreenPoint(worldPos1);
-        vector2 v2 = worldToScreenPoint(worldPos2);
+        const int bA[3] = {cTris2d[2].y < cTris2d[0].y,
+                           cTris2d[0].y < cTris2d[1].y,
+                           cTris2d[1].y < cTris2d[2].y};
 
-        float c0 = controlFunction(v2, v1, pos, v0);
-        float c1 = controlFunction(v0, v2, pos, v1);
-        float c2 = controlFunction(v1, v0, pos, v2);
+        if (!bA[0] && !bA[1] && !bA[2])
+            continue;
+        const int sIndex[3] = {bA[0] + !bA[1], bA[1] + !bA[2], bA[2] + !bA[0]};
+        vector2 tris2d[3];
+        tris2d[sIndex[0]] = cTris2d[0];
+        tris2d[sIndex[1]] = cTris2d[1];
+        tris2d[sIndex[2]] = cTris2d[2];
 
-        float depth = c0 * worldPos0.z + c1 * worldPos1.z + c2 * worldPos2.z;
+        if (tris2d[2].y < 0 || tris2d[0].y > height)
+            continue;
 
-        if (c0 > 0 && c1 > 0 && c2 > 0 & minDepth > depth & campos.z < depth)
+        float zPos[3];
+        zPos[sIndex[0]] = worldPos[0].z - campos.z;
+        zPos[sIndex[1]] = worldPos[1].z - campos.z;
+        zPos[sIndex[2]] = worldPos[2].z - campos.z;
+
+        vector3 tNormals[3];
+        tNormals[sIndex[0]] = normals[triangles[t].v0];
+        tNormals[sIndex[1]] = normals[triangles[t].v1];
+        tNormals[sIndex[2]] = normals[triangles[t].v2];
+
+        int right = controlFunctionPoint(tris2d[0], tris2d[2], tris2d[1]);
+
+        const int indexs[3][2] = {
+            {1, 0},
+            {2, 0},
+            {2, 1}};
+        float inclination[3];
+        float add[3];
+        float lerp[3];
+
+        for (int i = 0; i < 3; i++)
         {
-            minDepth = depth;
-            trisIndex = t;
-            contactTris = 1;
-            rate = {c0, c1, c2};
-        }
-    }
-    if (contactTris)
-    {
-        vector3 n0 = normals[triangles[trisIndex].v0];
-        vector3 n1 = normals[triangles[trisIndex].v1];
-        vector3 n2 = normals[triangles[trisIndex].v2];
+            vector2 a = tris2d[indexs[i][0]];
+            vector2 b = tris2d[indexs[i][1]];
+            if (a.y == b.y)
+                continue;
 
-        return normalToColor(rate.x, rate.y, rate.z, n0, n1, n2);
-    }
-    else
-    {
-        return sf::Color::Black;
+            lerp[i] = 1 / (a.y - b.y);
+            inclination[i] = (b.x - a.x) / (b.y - a.y);
+            add[i] = a.x - a.y * inclination[i];
+        }
+
+        for (float y = tris2d[0].y; y < tris2d[1].y; y++)
+        {
+            const int a = right;
+            const int b = !right;
+
+            const int max = y * inclination[a] + add[a];
+            const int min = y * inclination[b] + add[b];
+
+            const float aL = (y - tris2d[0].y) * lerp[b];
+            const float bL = (y - tris2d[0].y) * lerp[a];
+
+            const float zPosA = zPos[a + 1] * aL + zPos[0] * (1.0f - aL);
+            const float zPosB = zPos[b + 1] * bL + zPos[0] * (1.0f - bL);
+
+            const vector3 aNormal = vector3Lerp(tNormals[a + 1], tNormals[0], bL);
+            const vector3 bNormal = vector3Lerp(tNormals[b + 1], tNormals[0], aL);
+            float cL = 1.0f / (max - min);
+            for (int x = min; x < max; x++)
+            {
+                const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
+                if (rZPos < zBuffer[x][(int)y])
+                {
+                    const vector3 rNormal = vector3Lerp(aNormal, bNormal, (x - min) * cL);
+                    zBuffer[x][(int)y] = rZPos;
+                    image.setPixel(x, y, normalToColor(rNormal));
+                }
+            }
+        }
+        for (float y = tris2d[1].y; y < tris2d[2].y; y++)
+        {
+            const int a = right + 1;
+            const int b = !right + 1;
+
+            const int max = y * inclination[b] + add[b];
+            const int min = y * inclination[a] + add[a];
+
+            const float aL = (y - tris2d[1].y + ((tris2d[1].y - tris2d[0].y) * !right)) * lerp[a];
+            const float bL = (y - tris2d[1].y + ((tris2d[1].y - tris2d[0].y) * right)) * lerp[b];
+
+            const float zPosA = zPos[2] * bL + zPos[!right] * (1.0f - bL);
+            const float zPosB = zPos[2] * aL + zPos[right] * (1.0f - aL);
+
+            const vector3 aNormal = vector3Lerp(tNormals[2], tNormals[!right], bL);
+            const vector3 bNormal = vector3Lerp(tNormals[2], tNormals[right], aL);
+            float cL = 1.0f / (max - min);
+            for (int x = min; x < max; x++)
+            {
+                const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
+                if (rZPos < zBuffer[x][(int)y])
+                {
+                    const vector3 rNormal = vector3Lerp(aNormal, bNormal, (x - min) * cL);
+                    zBuffer[x][(int)y] = rZPos;
+                    image.setPixel(x, y, normalToColor(rNormal));
+                }
+            }
+        }
     }
 }
 
@@ -2121,7 +2183,6 @@ int main()
 {
 
     sf::RenderWindow window(sf::VideoMode(with, height), "Window");
-    sf::Image image;
     image.create(with, height);
 
     sf::Texture texture;
@@ -2168,13 +2229,7 @@ int main()
         }
 
         window.clear();
-        for (int x = 0; x < with; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                image.setPixel(x, y, setPixel(x, y));
-            }
-        }
+        draw();
         texture.loadFromImage(image);
         sf::Sprite sprite(texture);
         window.draw(sprite);
@@ -2182,7 +2237,7 @@ int main()
 
         clock_t finish = clock();
         double duration = (double)(finish - start) / CLOCKS_PER_SEC;
-        std::cout<<"frame time: " << duration << std::endl;
+        std::cout << "frame time: " << duration << std::endl;
     }
     return 0;
 }
