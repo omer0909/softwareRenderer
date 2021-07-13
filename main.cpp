@@ -2120,7 +2120,7 @@ void draw()
             add[i] = a.x - a.y * inclination[i];
         }
 
-        for (float y = tris2d[0].y; y < tris2d[1].y; y++)
+        for (int y = tris2d[0].y + 1; y < tris2d[1].y; y++)
         {
             const int a = right;
             const int b = !right;
@@ -2140,15 +2140,15 @@ void draw()
             for (int x = min; x < max; x++)
             {
                 const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
-                if (rZPos < zBuffer[x][(int)y])
+                if (rZPos < zBuffer[x][y])
                 {
                     const vector3 rNormal = vector3Lerp(aNormal, bNormal, (x - min) * cL);
-                    zBuffer[x][(int)y] = rZPos;
+                    zBuffer[x][y] = rZPos;
                     image.setPixel(x, y, normalToColor(rNormal));
                 }
             }
         }
-        for (float y = tris2d[1].y; y < tris2d[2].y; y++)
+        for (int y = tris2d[1].y + 1; y < tris2d[2].y; y++)
         {
             const int a = right + 1;
             const int b = !right + 1;
@@ -2168,10 +2168,10 @@ void draw()
             for (int x = min; x < max; x++)
             {
                 const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
-                if (rZPos < zBuffer[x][(int)y])
+                if (rZPos < zBuffer[x][y])
                 {
                     const vector3 rNormal = vector3Lerp(aNormal, bNormal, (x - min) * cL);
-                    zBuffer[x][(int)y] = rZPos;
+                    zBuffer[x][y] = rZPos;
                     image.setPixel(x, y, normalToColor(rNormal));
                 }
             }
