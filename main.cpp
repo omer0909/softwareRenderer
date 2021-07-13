@@ -2120,7 +2120,7 @@ void draw()
             add[i] = a.x - a.y * inclination[i];
         }
 
-        for (int y = tris2d[0].y + 1; y < tris2d[1].y; y++)
+        for (int y = tris2d[0].y + 0.9999f; y < tris2d[1].y; y++)
         {
             const int a = right;
             const int b = !right;
@@ -2148,7 +2148,7 @@ void draw()
                 }
             }
         }
-        for (int y = tris2d[1].y + 1; y < tris2d[2].y; y++)
+        for (int y = tris2d[1].y + 0.9999f; y < tris2d[2].y; y++)
         {
             const int a = right + 1;
             const int b = !right + 1;
