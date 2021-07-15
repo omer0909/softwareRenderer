@@ -2017,6 +2017,7 @@ const tris triangles[trisSize] = {
     {504, 506, 314},
     {319, 321, 503},
     {504, 322, 320}};
+
 void clearZBuffer()
 {
     for (unsigned int x = 0; x < with; x++)
@@ -2035,10 +2036,12 @@ vector2 worldToScreenPoint(vector3 pos)
     float y = ((-pos.y - campos.y) / ((pos.z - campos.z) / focalLegenth));
     return {x + halfWith, y + halfHeight};
 }
+
 sf::Color normalToColor(vector3 normal)
 {
     return sf::Color((normal.x + 1) * 128, (normal.y + 1) * 128, (normal.z + 1) * 128, 255);
 }
+
 bool controlFunctionPoint(vector2 a, vector2 b, vector2 point)
 {
     float tolorance = a.x - b.x;
@@ -2072,6 +2075,9 @@ void draw()
             worldToScreenPoint(worldPos[0]),
             worldToScreenPoint(worldPos[1]),
             worldToScreenPoint(worldPos[2])};
+
+        if (controlFunctionPoint(cTris2d[0], cTris2d[1], cTris2d[2]))
+            continue;
 
         const int bA[3] = {cTris2d[2].y < cTris2d[0].y,
                            cTris2d[0].y < cTris2d[1].y,
@@ -2119,25 +2125,24 @@ void draw()
             inclination[i] = (b.x - a.x) / (b.y - a.y);
             add[i] = a.x - a.y * inclination[i];
         }
-
-        for (int y = tris2d[0].y + 0.9999f; y < tris2d[1].y; y++)
+        for (int y = tris2d[0].y + 1; y <= tris2d[1].y; y++)
         {
             const int a = right;
             const int b = !right;
 
-            const int max = y * inclination[a] + add[a];
-            const int min = y * inclination[b] + add[b];
+            const float max = y * inclination[a] + add[a];
+            const float min = y * inclination[b] + add[b];
 
             const float aL = (y - tris2d[0].y) * lerp[b];
             const float bL = (y - tris2d[0].y) * lerp[a];
 
-            const float zPosA = zPos[a + 1] * aL + zPos[0] * (1.0f - aL);
-            const float zPosB = zPos[b + 1] * bL + zPos[0] * (1.0f - bL);
+            const float zPosA = zPos[a + 1] * bL + zPos[0] * (1.0f - bL);
+            const float zPosB = zPos[b + 1] * aL + zPos[0] * (1.0f - aL);
 
             const vector3 aNormal = vector3Lerp(tNormals[a + 1], tNormals[0], bL);
             const vector3 bNormal = vector3Lerp(tNormals[b + 1], tNormals[0], aL);
-            float cL = 1.0f / (max - min);
-            for (int x = min; x < max; x++)
+            const float cL = 1.0f / (max - min);
+            for (int x = min + 1; x <= max; x++)
             {
                 const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
                 if (rZPos < zBuffer[x][y])
@@ -2148,13 +2153,13 @@ void draw()
                 }
             }
         }
-        for (int y = tris2d[1].y + 0.9999f; y < tris2d[2].y; y++)
+        for (int y = tris2d[1].y + 1; y <= tris2d[2].y; y++)
         {
             const int a = right + 1;
             const int b = !right + 1;
 
-            const int max = y * inclination[b] + add[b];
-            const int min = y * inclination[a] + add[a];
+            const float max = y * inclination[b] + add[b];
+            const float min = y * inclination[a] + add[a];
 
             const float aL = (y - tris2d[1].y + ((tris2d[1].y - tris2d[0].y) * !right)) * lerp[a];
             const float bL = (y - tris2d[1].y + ((tris2d[1].y - tris2d[0].y) * right)) * lerp[b];
@@ -2164,8 +2169,8 @@ void draw()
 
             const vector3 aNormal = vector3Lerp(tNormals[2], tNormals[!right], bL);
             const vector3 bNormal = vector3Lerp(tNormals[2], tNormals[right], aL);
-            float cL = 1.0f / (max - min);
-            for (int x = min; x < max; x++)
+            const float cL = 1.0f / (max - min);
+            for (int x = min + 1; x <= max; x++)
             {
                 const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
                 if (rZPos < zBuffer[x][y])
