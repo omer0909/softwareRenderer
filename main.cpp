@@ -2030,16 +2030,28 @@ void clearImage()
         for (unsigned int y = 0; y < height; y++)
             image.setPixel(x, y, backroundColor);
 }
+
+vector3 transform(vector3 pos)
+{
+    vector3 result = {pos.x - campos.x,
+                      pos.y - campos.y,
+                      pos.z - campos.z};
+    return result;
+}
+
 vector2 worldToScreenPoint(vector3 pos)
 {
-    float x = ((-pos.x - campos.x) / ((pos.z - campos.z) / focalLegenth));
-    float y = ((-pos.y - campos.y) / ((pos.z - campos.z) / focalLegenth));
+    float x = (-pos.x / (pos.z / focalLegenth));
+    float y = (-pos.y / (pos.z / focalLegenth));
     return {x + halfWith, y + halfHeight};
 }
 
 sf::Color normalToColor(vector3 normal)
 {
-    return sf::Color((normal.x + 1) * 128, (normal.y + 1) * 128, (normal.z + 1) * 128, 255);
+    return sf::Color((normal.x + 1) * 128,
+                     (normal.y + 1) * 128,
+                     (normal.z + 1) * 128,
+                     255);
 }
 
 bool controlFunctionPoint(vector2 a, vector2 b, vector2 point)
@@ -2067,9 +2079,9 @@ void draw()
     for (int t = 0; t < trisSize; t++)
     {
         const vector3 worldPos[3] = {
-            vertices[triangles[t].v0],
-            vertices[triangles[t].v1],
-            vertices[triangles[t].v2]};
+            transform(vertices[triangles[t].v0]),
+            transform(vertices[triangles[t].v1]),
+            transform(vertices[triangles[t].v2])};
 
         const vector2 cTris2d[3] = {
             worldToScreenPoint(worldPos[0]),
@@ -2085,7 +2097,11 @@ void draw()
 
         if (!bA[0] && !bA[1] && !bA[2])
             continue;
-        const int sIndex[3] = {bA[0] + !bA[1], bA[1] + !bA[2], bA[2] + !bA[0]};
+
+        const int sIndex[3] = {bA[0] + !bA[1],
+                               bA[1] + !bA[2],
+                               bA[2] + !bA[0]};
+
         vector2 tris2d[3];
         tris2d[sIndex[0]] = cTris2d[0];
         tris2d[sIndex[1]] = cTris2d[1];
@@ -2095,9 +2111,9 @@ void draw()
             continue;
 
         float zPos[3];
-        zPos[sIndex[0]] = worldPos[0].z - campos.z;
-        zPos[sIndex[1]] = worldPos[1].z - campos.z;
-        zPos[sIndex[2]] = worldPos[2].z - campos.z;
+        zPos[sIndex[0]] = worldPos[0].z;
+        zPos[sIndex[1]] = worldPos[1].z;
+        zPos[sIndex[2]] = worldPos[2].z;
 
         vector3 tNormals[3];
         tNormals[sIndex[0]] = normals[triangles[t].v0];
