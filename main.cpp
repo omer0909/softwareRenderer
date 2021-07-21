@@ -20,7 +20,7 @@ struct tris
 };
 const int with = 1920;
 const int height = 1080;
-const float focalLegenth = height * 1;
+const float focalLegenth = 1.0f / (height * 1);
 const int trisSize = 967;
 const int vertexSize = 507;
 vector3 campos = {0.0f, 0.0f, -4.0f};
@@ -2017,7 +2017,22 @@ const tris triangles[trisSize] = {
     {504, 506, 314},
     {319, 321, 503},
     {504, 322, 320}};
-
+int MinInt(int a, int b)
+{
+    if (a < b)
+    {
+        return a;
+    }
+    return b;
+}
+int MaxInt(int a, int b)
+{
+    if (a < b)
+    {
+        return b;
+    }
+    return a;
+}
 void clearZBuffer()
 {
     for (unsigned int x = 0; x < with; x++)
@@ -2041,8 +2056,8 @@ vector3 transform(vector3 pos)
 
 vector2 worldToScreenPoint(vector3 pos)
 {
-    float x = (-pos.x / (pos.z / focalLegenth));
-    float y = (-pos.y / (pos.z / focalLegenth));
+    float x = (-pos.x / (pos.z * focalLegenth));
+    float y = (-pos.y / (pos.z * focalLegenth));
     return {x + halfWith, y + halfHeight};
 }
 
@@ -2129,7 +2144,6 @@ void draw()
         float inclination[3];
         float add[3];
         float lerp[3];
-
         for (int i = 0; i < 3; i++)
         {
             vector2 a = tris2d[indexs[i][0]];
@@ -2141,7 +2155,8 @@ void draw()
             inclination[i] = (b.x - a.x) / (b.y - a.y);
             add[i] = a.x - a.y * inclination[i];
         }
-        for (int y = tris2d[0].y + 1; y <= tris2d[1].y; y++)
+        const int aMaxY = MinInt(tris2d[1].y, height - 1);
+        for (int y = MaxInt(0, tris2d[0].y + 1); y <= aMaxY; y++)
         {
             const int a = right;
             const int b = !right;
@@ -2158,7 +2173,8 @@ void draw()
             const vector3 aNormal = vector3Lerp(tNormals[a + 1], tNormals[0], bL);
             const vector3 bNormal = vector3Lerp(tNormals[b + 1], tNormals[0], aL);
             const float cL = 1.0f / (max - min);
-            for (int x = min + 1; x <= max; x++)
+            const int aMaxX = MinInt(max, with - 1);
+            for (int x = MaxInt(0, min + 1); x <= aMaxX; x++)
             {
                 const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
                 if (rZPos < zBuffer[x][y])
@@ -2169,7 +2185,9 @@ void draw()
                 }
             }
         }
-        for (int y = tris2d[1].y + 1; y <= tris2d[2].y; y++)
+
+        const int bMaxY = MinInt(tris2d[2].y, height - 1);
+        for (int y = MaxInt(0, tris2d[1].y + 1); y <= bMaxY; y++)
         {
             const int a = right + 1;
             const int b = !right + 1;
@@ -2186,7 +2204,8 @@ void draw()
             const vector3 aNormal = vector3Lerp(tNormals[2], tNormals[!right], bL);
             const vector3 bNormal = vector3Lerp(tNormals[2], tNormals[right], aL);
             const float cL = 1.0f / (max - min);
-            for (int x = min + 1; x <= max; x++)
+            const int bMaxX = MinInt(max, with - 1);
+            for (int x = MaxInt(0, min + 1); x <= bMaxX; x++)
             {
                 const float rZPos = zPosA * (x - min) * cL + zPosB * (1.0f - (x - min) * cL);
                 if (rZPos < zBuffer[x][y])
