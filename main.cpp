@@ -3,20 +3,15 @@
 #include <time.h>
 struct vector2
 {
-    float x;
-    float y;
+    float x, y;
 };
 struct vector3
 {
-    float x;
-    float y;
-    float z;
+    float x, y, z;
 };
 struct tris
 {
-    int v0;
-    int v1;
-    int v2;
+    int v0, v1, v2;
 };
 const int with = 1920;
 const int height = 1080;
@@ -2019,19 +2014,11 @@ const tris triangles[trisSize] = {
     {504, 322, 320}};
 int MinInt(int a, int b)
 {
-    if (a < b)
-    {
-        return a;
-    }
-    return b;
+    return (a < b) ? a : b;
 }
 int MaxInt(int a, int b)
 {
-    if (a < b)
-    {
-        return b;
-    }
-    return a;
+    return (a < b) ? b : a;
 }
 void clearZBuffer()
 {
@@ -2048,10 +2035,9 @@ void clearImage()
 
 vector3 transform(vector3 pos)
 {
-    vector3 result = {pos.x - campos.x,
-                      pos.y - campos.y,
-                      pos.z - campos.z};
-    return result;
+    return {pos.x - campos.x,
+            pos.y - campos.y,
+            pos.z - campos.z};
 }
 
 vector2 worldToScreenPoint(vector3 pos)
