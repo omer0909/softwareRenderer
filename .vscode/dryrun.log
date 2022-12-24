@@ -1,0 +1,19 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/ooz/Desktop/software_renderer'
+echo building main.o
+g++ -c -Wall -Wextra -Wshadow -std=c++17 -MD -O3 src/main.cpp -o main.o -Iinclude -I/usr/include/SDL2 
+echo building Window.o
+g++ -c -Wall -Wextra -Wshadow -std=c++17 -MD -O3 src/Window.cpp -o Window.o -Iinclude -I/usr/include/SDL2 
+ 
+echo building obj_read.o
+g++ -c -Wall -Wextra -Wshadow -std=c++17 -MD -O3 src/obj_read.cpp -o obj_read.o -Iinclude -I/usr/include/SDL2 
+echo building Vector3.o
+g++ -c -Wall -Wextra -Wshadow -std=c++17 -MD -O3 src/Vector3.cpp -o Vector3.o -Iinclude -I/usr/include/SDL2 
+echo building Vector2.o
+g++ -c -Wall -Wextra -Wshadow -std=c++17 -MD -O3 src/Vector2.cpp -o Vector2.o -Iinclude -I/usr/include/SDL2 
+echo building Mesh.o
+g++ -c -Wall -Wextra -Wshadow -std=c++17 -MD -O3 src/Mesh.cpp -o Mesh.o -Iinclude -I/usr/include/SDL2 
+g++ -Wall -Wextra -Wshadow -std=c++17 -MD -O3 main.o Window.o obj_read.o Vector3.o Vector2.o Mesh.o -o out -Iinclude -I/usr/include/SDL2 -lSDL2 
+echo finish
+make: Leaving directory '/home/ooz/Desktop/software_renderer'
+ 
