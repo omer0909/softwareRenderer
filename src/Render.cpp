@@ -65,16 +65,16 @@ int normalToColor(Vector3 normal)
 	       ((int)((normal.z + 1) * 128) << 8) + 255;
 }
 
-void TriIntersect(const Transform &cam, Vector3 v0, Vector3 v1, Vector3 v2,
-		  Vector2 &uv, float &distance)
+void TriIntersect(const Vector3 dir, const Vector3 vertex[3], Vector2 &uv,
+		  float &distance)
 {
-	Vector3 v1v0 = v1 - v0;
-	Vector3 v2v0 = v2 - v0;
-	Vector3 rov0 = cam.pos - v0;
+	Vector3 v1v0 = vertex[1] - vertex[0];
+	Vector3 v2v0 = vertex[2] - vertex[0];
+	Vector3 rov0 = -vertex[0];
 
 	Vector3 n = Vector3::CrossProduct(v1v0, v2v0);
-	Vector3 q = Vector3::CrossProduct(rov0, cam.Forward());
-	float d = 1.0 / Vector3::DotProduct(cam.Forward(), n);
+	Vector3 q = Vector3::CrossProduct(rov0, dir);
+	float d = 1.0 / Vector3::DotProduct(dir, n);
 	uv.x = d * Vector3::DotProduct(-q, v2v0);
 	uv.y = d * Vector3::DotProduct(q, v1v0);
 	distance = d * Vector3::DotProduct(-n, rov0);
@@ -121,11 +121,6 @@ inline void Render::RenderObject(Object object)
 		if (tris2d[2].y < 0 || tris2d[0].y > height)
 			continue;
 
-		float zPos[3];
-		zPos[sIndex[0]] = worldPos[0].z;
-		zPos[sIndex[1]] = worldPos[1].z;
-		zPos[sIndex[2]] = worldPos[2].z;
-
 		Vector3 tNormals[3];
 		tNormals[sIndex[0]] = mesh.normals[mesh.faces_normals[t]];
 		tNormals[sIndex[1]] = mesh.normals[mesh.faces_normals[t + 1]];
@@ -137,7 +132,6 @@ inline void Render::RenderObject(Object object)
 		const int indexs[3][2] = {{1, 0}, {2, 0}, {2, 1}};
 		float inclination[3];
 		float add[3];
-		float lerp[3];
 
 		for (int i = 0; i < 3; i++) {
 			Vector2 a = tris2d[indexs[i][0]];
@@ -145,7 +139,6 @@ inline void Render::RenderObject(Object object)
 			if (a.y == b.y)
 				continue;
 
-			lerp[i] = 1 / (a.y - b.y);
 			inclination[i] = (b.x - a.x) / (b.y - a.y);
 			add[i] = a.x - a.y * inclination[i];
 		}
@@ -158,32 +151,20 @@ inline void Render::RenderObject(Object object)
 			const float max = y * inclination[a] + add[a];
 			const float min = y * inclination[b] + add[b];
 
-			const float aL = (y - tris2d[0].y) * lerp[b];
-			const float bL = (y - tris2d[0].y) * lerp[a];
-
-			const float zPosA =
-			    zPos[a + 1] * bL + zPos[0] * (1.0f - bL);
-			const float zPosB =
-			    zPos[b + 1] * aL + zPos[0] * (1.0f - aL);
-
-			const Vector3 aNormal =
-			    Vector3::Lerp(tNormals[a + 1], tNormals[0], bL);
-			const Vector3 bNormal =
-			    Vector3::Lerp(tNormals[b + 1], tNormals[0], aL);
-			const float cL = 1.0f / (max - min);
 			const int aMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= aMaxX; x++) {
-				const float rZPos =
-				    zPosA * (x - min) * cL +
-				    zPosB * (1.0f - (x - min) * cL);
-				if (rZPos < zBuffer[y * height + x]) {
-					const Vector3 rNormal = Vector3::Lerp(
-					    aNormal, bNormal, (x - min) * cL);
-					zBuffer[y * height + x] = rZPos;
+				float distance;
+				Vector2 uv;
+				TriIntersect(Vector3(-x + halfWith,
+						     -y + halfHeight, height)
+						 .Normalized(),
+					     worldPos, uv, distance);
+				if (distance < zBuffer[y * height + x]) {
+					zBuffer[y * height + x] = distance;
 					window.SetPixel(
 					    x, y,
 					    normalToColor(Vector3::One() *
-							  rZPos * 10));
+							  distance * 10));
 				}
 			}
 		}
@@ -196,55 +177,26 @@ inline void Render::RenderObject(Object object)
 			const float max = y * inclination[b] + add[b];
 			const float min = y * inclination[a] + add[a];
 
-			const float aL =
-			    (y - tris2d[1].y +
-			     ((tris2d[1].y - tris2d[0].y) * !right)) *
-			    lerp[a];
-			const float bL =
-			    (y - tris2d[1].y +
-			     ((tris2d[1].y - tris2d[0].y) * right)) *
-			    lerp[b];
-
-			const float zPosA =
-			    zPos[2] * bL + zPos[!right] * (1.0f - bL);
-			const float zPosB =
-			    zPos[2] * aL + zPos[right] * (1.0f - aL);
-
-			const Vector3 aNormal =
-			    Vector3::Lerp(tNormals[2], tNormals[!right], bL);
-			const Vector3 bNormal =
-			    Vector3::Lerp(tNormals[2], tNormals[right], aL);
-			const float cL = 1.0f / (max - min);
 			const int bMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= bMaxX; x++) {
-				const float rZPos =
-				    zPosA * (x - min) * cL +
-				    zPosB * (1.0f - (x - min) * cL);
-				if (rZPos < zBuffer[y * height + x]) {
-					const Vector3 rNormal = Vector3::Lerp(
-					    aNormal, bNormal, (x - min) * cL);
-					zBuffer[y * height + x] = rZPos;
+				float distance;
+				Vector2 uv;
+				TriIntersect(Vector3(-x + halfWith,
+						     -y + halfHeight, height)
+						 .Normalized(),
+					     worldPos, uv, distance);
+				if (distance < zBuffer[y * height + x]) {
+					zBuffer[y * height + x] = distance;
 					window.SetPixel(
 					    x, y,
 					    normalToColor(Vector3::One() *
-							  rZPos * 10));
+							  distance * 10));
 				}
 			}
 		}
 	}
 }
-/*
-vec3 v1v0 = v1 - v0;
-vec3 v2v0 = v2 - v0;
-vec3 rov0 = ro - v0;
 
-vec3 n = cross(v1v0, v2v0);
-vec3 q = cross(rov0, rd);
-float d = 1.0 / dot(rd, n);
-float u = d * dot(-q, v2v0);
-float v = d * dot(q, v1v0);
-float t = d * dot(-n, rov0);
-*/
 void Render::clear_zBuffer()
 {
 	for (int i = 0; i < with * height; i++)

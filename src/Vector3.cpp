@@ -45,7 +45,7 @@ Vector3 Vector3::operator-(const Vector3 &a) const
 	return Vector3(x - a.x, y - a.y, z - a.z);
 }
 
-Vector3 Vector3::operator-() { return Vector3(-x, -y, -z); }
+Vector3 Vector3::operator-() const { return Vector3(-x, -y, -z); }
 
 float Vector3::DotProduct(const Vector3 &a, const Vector3 &b)
 {
@@ -59,3 +59,13 @@ Vector3 Vector3::CrossProduct(const Vector3 &a, const Vector3 &b)
 	float zCross = a.x * b.y - a.y * b.x;
 	return Vector3(xCross, yCross, zCross);
 }
+
+Vector3 Vector3::Normalized() const
+{
+	float factor = 1 / Magnitude();
+	return Vector3(x * factor, y * factor, z * factor);
+}
+
+float Vector3::Magnitude() const { return sqrtf(SqrMagnitude()); }
+
+float Vector3::SqrMagnitude() const { return x * x + y * y + z * z; }

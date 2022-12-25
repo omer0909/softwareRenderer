@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <math.h>
 
 class Vector3
 {
@@ -13,14 +14,15 @@ class Vector3
 	float x;
 	float y;
 	float z;
-	float magnitude();
+	float SqrMagnitude() const;
+	float Magnitude() const;
 	Vector3 operator+(const Vector3 &a) const;
 	Vector3 operator-(const Vector3 &a) const;
 	Vector3 operator*(const Vector3 &a) const;
 	Vector3 operator/(const Vector3 &a) const;
 	Vector3 operator*(const float &a) const;
 	Vector3 operator/(const float &a) const;
-	Vector3 operator-();
+	Vector3 operator-() const;
 	static float Distance(const Vector3 &a, const Vector3 &b);
 	static float DotProduct(const Vector3 &a, const Vector3 &b);
 	static Vector3 CrossProduct(const Vector3 &a, const Vector3 &b);
@@ -28,6 +30,7 @@ class Vector3
 			    const float val);
 	static Vector3 Zero();
 	static Vector3 One();
+	Vector3 Normalized() const;
 };
 
 std::ostream &operator<<(std::ostream &o, Vector3 const &i);
