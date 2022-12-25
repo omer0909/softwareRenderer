@@ -34,11 +34,11 @@ void UpdateAll(Window &window)
 	clock_t old = clock();
 	Render render(window);
 	while (true) {
-		double deltaTime = (clock() - old) / CLOCKS_PER_SEC;
-		(void)deltaTime;
 		Events();
-		render.View();
 		old = clock();
+		render.View();
+		clock_t deltaTime = (clock() - old);
+		std::cout << deltaTime << std::endl;
 	}
 }
 
@@ -48,9 +48,13 @@ int main()
 
 	Object object;
 	object.mesh = obj_read("test.obj");
+	object.transform.rotation = Quaternion(Vector3(0,180 * ANGLE_TO_RADIAN,0));
+	object.transform.pos = Vector3::Zero();
+
 	Scene::Get().objects.push_back(object);
 
 	Scene::Get().camera.transform.pos = Vector3(0, 0, -3);
+	Scene::Get().camera.transform.rotation = Quaternion::Zero();
 
 	while (true) {
 		UpdateAll(window);

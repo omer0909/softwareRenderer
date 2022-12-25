@@ -9,7 +9,8 @@ class Transform
 	Transform();
 	Transform(const Transform &);
 	Transform &operator=(const Transform &);
+	Vector3 Forward() const;
 	~Transform();
 	Vector3 pos;
-	Quaternion angle;
+	Quaternion rotation;
 };

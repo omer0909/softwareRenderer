@@ -103,8 +103,6 @@ Mesh obj_read(std::string name)
 
 	Mesh result;
 
-	result.tranformed_vertices = new Vector3[vertices.size()];
-	result.tranformed_normals = new Vector3[normals.size()];
 	listCopyToArray<Vector3>(vertices, result.vertices);
 	listCopyToArray<Vector2>(uv, result.uv);
 	listCopyToArray<Vector3>(normals, result.normals);

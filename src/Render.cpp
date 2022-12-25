@@ -29,11 +29,15 @@ Render &Render::operator=(const Render &other)
 
 Render::~Render() { delete zBuffer; }
 
-inline Vector3 transform(Vector3 pos)
+inline Vector3 transform(Vector3 pos, Transform transform)
 {
-	Transform &cam = Scene::Get().camera.transform;
 
-	return {pos.x - cam.pos.x, pos.y - cam.pos.y, pos.z - cam.pos.z};
+	Transform &cam = Scene::Get().camera.transform;
+	pos = transform.rotation * pos;
+	pos = pos - transform.pos;
+	pos = pos - cam.pos;
+	pos = cam.rotation * pos;
+	return {pos};
 }
 
 inline Vector2 Render::worldToScreenPoint(Vector3 pos)
@@ -43,16 +47,12 @@ inline Vector2 Render::worldToScreenPoint(Vector3 pos)
 	return {x + halfWith, y + halfHeight};
 }
 
-bool Render::controlFunctionPoint(Vector2 a, Vector2 b, Vector2 point)
+inline bool Render::controlFunctionPoint(Vector2 a, Vector2 b, Vector2 point)
 {
-	float tolorance = a.x - b.x;
-	if (tolorance < EPSILON && tolorance > -EPSILON)
-		return ((a.x - point.x) > 0) == (a.y < b.y);
+	Vector2 edge1 = a - b;
+	Vector2 edge2 = b - point;
 
-	float inclination = (b.y - a.y) / (b.x - a.x);
-	float add = a.y - (a.x * inclination);
-
-	return ((point.x * inclination) + add < point.y) == (a.x < b.x);
+	return (edge1.x * edge2.y) - (edge1.y * edge2.x) > 0;
 }
 
 static inline int MinInt(int a, int b) { return (a < b) ? a : b; }
@@ -60,8 +60,27 @@ static inline int MaxInt(int a, int b) { return (a < b) ? b : a; }
 
 int normalToColor(Vector3 normal)
 {
-	return ((int)((normal.x + 1) * 128) << 24) + ((int)((normal.y + 1) * 128) << 16) +
+	return ((int)((normal.x + 1) * 128) << 24) +
+	       ((int)((normal.y + 1) * 128) << 16) +
 	       ((int)((normal.z + 1) * 128) << 8) + 255;
+}
+
+void TriIntersect(const Transform &cam, Vector3 v0, Vector3 v1, Vector3 v2,
+		  Vector2 &uv, float &distance)
+{
+	Vector3 v1v0 = v1 - v0;
+	Vector3 v2v0 = v2 - v0;
+	Vector3 rov0 = cam.pos - v0;
+
+	Vector3 n = Vector3::CrossProduct(v1v0, v2v0);
+	Vector3 q = Vector3::CrossProduct(rov0, cam.Forward());
+	float d = 1.0 / Vector3::DotProduct(cam.Forward(), n);
+	uv.x = d * Vector3::DotProduct(-q, v2v0);
+	uv.y = d * Vector3::DotProduct(q, v1v0);
+	distance = d * Vector3::DotProduct(-n, rov0);
+
+	if (uv.x < 0.0 || uv.y < 0.0 || (uv.x + uv.y) > 1.0)
+		distance = -1.0;
 }
 
 inline void Render::RenderObject(Object object)
@@ -70,9 +89,12 @@ inline void Render::RenderObject(Object object)
 	for (unsigned int t = 0; t < mesh.faces_size; t += 3) {
 
 		const Vector3 worldPos[3] = {
-		    transform(mesh.vertices[mesh.faces_vertices[t]]),
-		    transform(mesh.vertices[mesh.faces_vertices[t + 1]]),
-		    transform(mesh.vertices[mesh.faces_vertices[t + 2]])};
+		    transform(mesh.vertices[mesh.faces_vertices[t]],
+			      object.transform),
+		    transform(mesh.vertices[mesh.faces_vertices[t + 1]],
+			      object.transform),
+		    transform(mesh.vertices[mesh.faces_vertices[t + 2]],
+			      object.transform)};
 
 		const Vector2 cTris2d[3] = {worldToScreenPoint(worldPos[0]),
 					    worldToScreenPoint(worldPos[1]),
@@ -158,8 +180,10 @@ inline void Render::RenderObject(Object object)
 					const Vector3 rNormal = Vector3::Lerp(
 					    aNormal, bNormal, (x - min) * cL);
 					zBuffer[y * height + x] = rZPos;
-					window.SetPixel(x, y,
-							normalToColor(rNormal));
+					window.SetPixel(
+					    x, y,
+					    normalToColor(Vector3::One() *
+							  rZPos * 10));
 				}
 			}
 		}
@@ -200,14 +224,27 @@ inline void Render::RenderObject(Object object)
 					const Vector3 rNormal = Vector3::Lerp(
 					    aNormal, bNormal, (x - min) * cL);
 					zBuffer[y * height + x] = rZPos;
-					window.SetPixel(x, y,
-							normalToColor(rNormal));
+					window.SetPixel(
+					    x, y,
+					    normalToColor(Vector3::One() *
+							  rZPos * 10));
 				}
 			}
 		}
 	}
 }
+/*
+vec3 v1v0 = v1 - v0;
+vec3 v2v0 = v2 - v0;
+vec3 rov0 = ro - v0;
 
+vec3 n = cross(v1v0, v2v0);
+vec3 q = cross(rov0, rd);
+float d = 1.0 / dot(rd, n);
+float u = d * dot(-q, v2v0);
+float v = d * dot(q, v1v0);
+float t = d * dot(-n, rov0);
+*/
 void Render::clear_zBuffer()
 {
 	for (int i = 0; i < with * height; i++)

@@ -22,3 +22,8 @@ std::ostream &operator<<(std::ostream &o, Vector2 const &v)
 	o << "{" << v.x << ", " << v.y << " }" << std::endl;
 	return (o);
 }
+
+Vector2 Vector2::operator-(const Vector2 &a) const
+{
+	return Vector2(x - a.x, y - a.y);
+}

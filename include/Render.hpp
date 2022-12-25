@@ -5,6 +5,8 @@
 #include <limits>
 
 #define EPSILON 0.00001f
+#define PI 3.1415926
+#define ANGLE_TO_RADIAN (PI / 180)
 
 class Render
 {

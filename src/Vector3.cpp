@@ -1,5 +1,14 @@
 #include <Vector3.hpp>
 
+Vector3 Vector3::Zero() { return Vector3(0, 0, 0); }
+
+Vector3 Vector3::One() { return Vector3(1, 1, 1); }
+
+Vector3 Vector3::operator*(const float &a) const
+{
+	return Vector3(x * a, y * a, z * a);
+}
+
 Vector3::Vector3() {}
 
 Vector3::Vector3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
@@ -29,4 +38,24 @@ std::ostream &operator<<(std::ostream &o, Vector3 const &v)
 {
 	o << "{" << v.x << ", " << v.y << ", " << v.z << " }" << std::endl;
 	return (o);
+}
+
+Vector3 Vector3::operator-(const Vector3 &a) const
+{
+	return Vector3(x - a.x, y - a.y, z - a.z);
+}
+
+Vector3 Vector3::operator-() { return Vector3(-x, -y, -z); }
+
+float Vector3::DotProduct(const Vector3 &a, const Vector3 &b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+Vector3 Vector3::CrossProduct(const Vector3 &a, const Vector3 &b)
+{
+	float xCross = a.y * b.z - a.z * b.y;
+	float yCross = a.z * b.x - a.x * b.z;
+	float zCross = a.x * b.y - a.y * b.x;
+	return Vector3(xCross, yCross, zCross);
 }

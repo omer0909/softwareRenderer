@@ -21,9 +21,6 @@ public:
 	unsigned int *faces_uv;
 	unsigned int *faces_normals;
 
-	Vector3 *tranformed_vertices;
-	Vector3 *tranformed_normals;
-
 	unsigned int vertices_size;
 	unsigned int uv_size;
 	unsigned int normals_size;
