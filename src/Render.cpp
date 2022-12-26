@@ -142,20 +142,19 @@ inline void Render::RenderObject(Object const &object)
 
 			const int aMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= aMaxX; x++) {
+				const Vector3 dir =
+				    Vector3(-x + halfWith, -y + halfHeight,
+					    height)
+					.Normalized();
 
-				float distance;
-				Vector2 uv;
-
-				const Vector3 dir = Vector3(-x + halfWith,
-						      -y + halfHeight, height)
-						  .Normalized();
-
-				const Vector3 q = Vector3::CrossProduct(rov0, dir);
+				const Vector3 q =
+				    Vector3::CrossProduct(rov0, dir);
 				const float d =
 				    1.0 / Vector3::DotProduct(dir, normal);
-				uv.x = d * Vector3::DotProduct(-q, v2v0);
-				uv.y = d * Vector3::DotProduct(q, v1v0);
-				distance =
+				const Vector2 uv(
+				    d * Vector3::DotProduct(-q, v2v0),
+				    d * Vector3::DotProduct(q, v1v0));
+				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
 				if (distance < zBuffer[y * height + x]) {
@@ -178,19 +177,20 @@ inline void Render::RenderObject(Object const &object)
 
 			const int bMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= bMaxX; x++) {
-				float distance;
-				Vector2 uv;
 
-				const Vector3 dir = Vector3(-x + halfWith,
-						      -y + halfHeight, height)
-						  .Normalized();
+				const Vector3 dir =
+				    Vector3(-x + halfWith, -y + halfHeight,
+					    height)
+					.Normalized();
 
-				const Vector3 q = Vector3::CrossProduct(rov0, dir);
+				const Vector3 q =
+				    Vector3::CrossProduct(rov0, dir);
 				const float d =
 				    1.0 / Vector3::DotProduct(dir, normal);
-				uv.x = d * Vector3::DotProduct(-q, v2v0);
-				uv.y = d * Vector3::DotProduct(q, v1v0);
-				distance =
+				const Vector2 uv(
+				    d * Vector3::DotProduct(-q, v2v0),
+				    d * Vector3::DotProduct(q, v1v0));
+				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
 				if (distance < zBuffer[y * height + x]) {
