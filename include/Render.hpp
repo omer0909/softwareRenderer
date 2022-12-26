@@ -11,9 +11,10 @@
 class Render
 {
       private:
-	Vector2 worldToScreenPoint(Vector3 pos);
-	void RenderObject(Object object);
-	bool controlFunctionPoint(Vector2 a, Vector2 b, Vector2 point);
+	Vector2 worldToScreenPoint(Vector3 const &pos);
+	void RenderObject(Object const &object);
+	bool controlFunctionPoint(Vector2 const &a, Vector2 const &b,
+				  Vector2 const &point);
 	void clear_zBuffer();
 	int height;
 	int with;

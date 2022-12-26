@@ -10,13 +10,13 @@ Render::Render(Window &_window) : window(_window)
 	halfWith = with / 2;
 }
 
-Render::Render(const Render &other) : window(other.window)
+Render::Render(Render const &other) : window(other.window)
 {
 	if (this != &other)
 		*this = other;
 }
 
-Render &Render::operator=(const Render &other)
+Render &Render::operator=(Render const &other)
 {
 	window = other.window;
 	std::copy(other.zBuffer, other.zBuffer + with * height, zBuffer);
@@ -29,25 +29,26 @@ Render &Render::operator=(const Render &other)
 
 Render::~Render() { delete zBuffer; }
 
-inline Vector3 transform(Vector3 pos, Transform transform)
+inline Vector3 transform(Vector3 const &pos, Transform const &transform)
 {
-
 	Transform &cam = Scene::Get().camera.transform;
-	pos = transform.rotation * pos;
-	pos = pos - transform.pos;
-	pos = pos - cam.pos;
-	pos = cam.rotation * pos;
-	return {pos};
+	Vector3 nPos = transform.rotation * pos;
+	nPos = nPos - transform.pos;
+	nPos = nPos - cam.pos;
+	nPos = cam.rotation * nPos;
+	return {nPos};
 }
 
-inline Vector2 Render::worldToScreenPoint(Vector3 pos)
+inline Vector2 Render::worldToScreenPoint(Vector3 const &pos)
 {
-	float x = (-pos.x / (pos.z * focalLegenth));
-	float y = (-pos.y / (pos.z * focalLegenth));
+	float factor = 1.0f / (pos.z * focalLegenth);
+	float x = (-pos.x * factor);
+	float y = (-pos.y * factor);
 	return {x + halfWith, y + halfHeight};
 }
 
-inline bool Render::controlFunctionPoint(Vector2 a, Vector2 b, Vector2 point)
+inline bool Render::controlFunctionPoint(Vector2 const &a, Vector2 const &b,
+					 Vector2 const &point)
 {
 	Vector2 edge1 = a - b;
 	Vector2 edge2 = b - point;
@@ -58,34 +59,16 @@ inline bool Render::controlFunctionPoint(Vector2 a, Vector2 b, Vector2 point)
 static inline int MinInt(int a, int b) { return (a < b) ? a : b; }
 static inline int MaxInt(int a, int b) { return (a < b) ? b : a; }
 
-int normalToColor(Vector3 normal)
+int normalToColor(Vector3 const &normal)
 {
 	return ((int)((normal.x + 1) * 128) << 24) +
 	       ((int)((normal.y + 1) * 128) << 16) +
 	       ((int)((normal.z + 1) * 128) << 8) + 255;
 }
 
-void TriIntersect(const Vector3 dir, const Vector3 vertex[3], Vector2 &uv,
-		  float &distance)
+inline void Render::RenderObject(Object const &object)
 {
-	Vector3 v1v0 = vertex[1] - vertex[0];
-	Vector3 v2v0 = vertex[2] - vertex[0];
-	Vector3 rov0 = -vertex[0];
-
-	Vector3 n = Vector3::CrossProduct(v1v0, v2v0);
-	Vector3 q = Vector3::CrossProduct(rov0, dir);
-	float d = 1.0 / Vector3::DotProduct(dir, n);
-	uv.x = d * Vector3::DotProduct(-q, v2v0);
-	uv.y = d * Vector3::DotProduct(q, v1v0);
-	distance = d * Vector3::DotProduct(-n, rov0);
-
-	if (uv.x < 0.0 || uv.y < 0.0 || (uv.x + uv.y) > 1.0)
-		distance = -1.0;
-}
-
-inline void Render::RenderObject(Object object)
-{
-	Mesh &mesh = object.mesh;
+	Mesh const &mesh = object.mesh;
 	for (unsigned int t = 0; t < mesh.faces_size; t += 3) {
 
 		const Vector3 worldPos[3] = {
@@ -95,6 +78,12 @@ inline void Render::RenderObject(Object object)
 			      object.transform),
 		    transform(mesh.vertices[mesh.faces_vertices[t + 2]],
 			      object.transform)};
+
+		const Vector3 v1v0 = worldPos[1] - worldPos[0];
+		const Vector3 v2v0 = worldPos[2] - worldPos[0];
+		const Vector3 rov0 = -worldPos[0];
+
+		const Vector3 normal = Vector3::CrossProduct(v1v0, v2v0);
 
 		const Vector2 cTris2d[3] = {worldToScreenPoint(worldPos[0]),
 					    worldToScreenPoint(worldPos[1]),
@@ -126,7 +115,7 @@ inline void Render::RenderObject(Object object)
 		tNormals[sIndex[1]] = mesh.normals[mesh.faces_normals[t + 1]];
 		tNormals[sIndex[2]] = mesh.normals[mesh.faces_normals[t + 2]];
 
-		int right =
+		const int right =
 		    controlFunctionPoint(tris2d[0], tris2d[2], tris2d[1]);
 
 		const int indexs[3][2] = {{1, 0}, {2, 0}, {2, 1}};
@@ -134,8 +123,8 @@ inline void Render::RenderObject(Object object)
 		float add[3];
 
 		for (int i = 0; i < 3; i++) {
-			Vector2 a = tris2d[indexs[i][0]];
-			Vector2 b = tris2d[indexs[i][1]];
+			const Vector2 a = tris2d[indexs[i][0]];
+			const Vector2 b = tris2d[indexs[i][1]];
 			if (a.y == b.y)
 				continue;
 
@@ -153,12 +142,22 @@ inline void Render::RenderObject(Object object)
 
 			const int aMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= aMaxX; x++) {
+
 				float distance;
 				Vector2 uv;
-				TriIntersect(Vector3(-x + halfWith,
-						     -y + halfHeight, height)
-						 .Normalized(),
-					     worldPos, uv, distance);
+
+				const Vector3 dir = Vector3(-x + halfWith,
+						      -y + halfHeight, height)
+						  .Normalized();
+
+				const Vector3 q = Vector3::CrossProduct(rov0, dir);
+				const float d =
+				    1.0 / Vector3::DotProduct(dir, normal);
+				uv.x = d * Vector3::DotProduct(-q, v2v0);
+				uv.y = d * Vector3::DotProduct(q, v1v0);
+				distance =
+				    d * Vector3::DotProduct(-normal, rov0);
+
 				if (distance < zBuffer[y * height + x]) {
 					zBuffer[y * height + x] = distance;
 					window.SetPixel(
@@ -181,10 +180,19 @@ inline void Render::RenderObject(Object object)
 			for (int x = MaxInt(0, min + 1); x <= bMaxX; x++) {
 				float distance;
 				Vector2 uv;
-				TriIntersect(Vector3(-x + halfWith,
-						     -y + halfHeight, height)
-						 .Normalized(),
-					     worldPos, uv, distance);
+
+				const Vector3 dir = Vector3(-x + halfWith,
+						      -y + halfHeight, height)
+						  .Normalized();
+
+				const Vector3 q = Vector3::CrossProduct(rov0, dir);
+				const float d =
+				    1.0 / Vector3::DotProduct(dir, normal);
+				uv.x = d * Vector3::DotProduct(-q, v2v0);
+				uv.y = d * Vector3::DotProduct(q, v1v0);
+				distance =
+				    d * Vector3::DotProduct(-normal, rov0);
+
 				if (distance < zBuffer[y * height + x]) {
 					zBuffer[y * height + x] = distance;
 					window.SetPixel(
