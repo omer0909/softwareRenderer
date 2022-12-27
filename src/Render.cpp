@@ -68,6 +68,8 @@ int normalToColor(Vector3 const &normal)
 
 inline void Render::RenderObject(Object const &object)
 {
+	constexpr float minView = 0.3f;
+
 	Mesh const &mesh = object.mesh;
 	for (unsigned int t = 0; t < mesh.faces_size; t += 3) {
 
@@ -79,25 +81,31 @@ inline void Render::RenderObject(Object const &object)
 		    transform(mesh.vertices[mesh.faces_vertices[t + 2]],
 			      object.transform)};
 
+		if (worldPos[0].z < minView && worldPos[1].z < minView &&
+		    worldPos[2].z < minView)
+			continue;
+
 		const Vector3 v1v0 = worldPos[1] - worldPos[0];
 		const Vector3 v2v0 = worldPos[2] - worldPos[0];
-		const Vector3 rov0 = -worldPos[0];
 
 		const Vector3 normal = Vector3::CrossProduct(v1v0, v2v0);
+		if (Vector3::DotProduct(worldPos[0], normal) > EPSILON)
+			continue;
+
+		const Vector3 rov0 = -worldPos[0];
 
 		const Vector2 cTris2d[3] = {worldToScreenPoint(worldPos[0]),
 					    worldToScreenPoint(worldPos[1]),
 					    worldToScreenPoint(worldPos[2])};
 
-		if (controlFunctionPoint(cTris2d[0], cTris2d[1], cTris2d[2]))
+		if ((cTris2d[0].x > with || cTris2d[0].x < 0) &&
+		    (cTris2d[1].x > with || cTris2d[1].x < 0) &&
+		    (cTris2d[2].x > with || cTris2d[2].x < 0))
 			continue;
 
 		const int bA[3] = {cTris2d[2].y < cTris2d[0].y,
 				   cTris2d[0].y < cTris2d[1].y,
 				   cTris2d[1].y < cTris2d[2].y};
-
-		if (!bA[0] && !bA[1] && !bA[2])
-			continue;
 
 		const int sIndex[3] = {bA[0] + !bA[1], bA[1] + !bA[2],
 				       bA[2] + !bA[0]};
@@ -157,7 +165,8 @@ inline void Render::RenderObject(Object const &object)
 				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
-				if (distance < zBuffer[y * height + x]) {
+				if (distance < zBuffer[y * height + x] &&
+				    distance > minView) {
 					zBuffer[y * height + x] = distance;
 					window.SetPixel(
 					    x, y,
@@ -193,7 +202,8 @@ inline void Render::RenderObject(Object const &object)
 				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
-				if (distance < zBuffer[y * height + x]) {
+				if (distance < zBuffer[y * height + x] &&
+				    distance > minView) {
 					zBuffer[y * height + x] = distance;
 					window.SetPixel(
 					    x, y,

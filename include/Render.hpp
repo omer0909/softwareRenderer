@@ -3,10 +3,20 @@
 #include <Scene.hpp>
 #include <Window.hpp>
 #include <limits>
+#include <thread>
 
 #define EPSILON 0.00001f
 #define PI 3.1415926
 #define ANGLE_TO_RADIAN (PI / 180)
+
+const unsigned int THREAD_NUMBER = std::thread::hardware_concurrency();
+
+struct RenderData {
+	int *tIndex;
+	Vector2 *uv;
+	Vector3 *tNormal;
+	float *zBuffer;
+};
 
 class Render
 {
@@ -22,6 +32,9 @@ class Render
 	int halfWith;
 	float focalLegenth;
 
+	float wallSlope;
+	float ceilSlope;
+
       public:
 	Render(Window &_window);
 	Render(const Render &);
@@ -29,7 +42,7 @@ class Render
 	~Render();
 	void View();
 
-	static unsigned int thred_number;
 	float *zBuffer;
 	Window &window;
+	// std::mutex mtx;
 };

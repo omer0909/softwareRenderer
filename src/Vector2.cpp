@@ -10,8 +10,6 @@ Vector2::Vector2(const Vector2 &a) { *this = a; }
 
 Vector2 &Vector2::operator=(const Vector2 &a)
 {
-	if (this == &a)
-		return *this;
 	x = a.x;
 	y = a.y;
 	return *this;

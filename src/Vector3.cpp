@@ -19,8 +19,6 @@ Vector3::Vector3(const Vector3 &a) { *this = a; }
 
 Vector3 &Vector3::operator=(const Vector3 &a)
 {
-	if (this == &a)
-		return *this;
 	x = a.x;
 	y = a.y;
 	z = a.z;

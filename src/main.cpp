@@ -28,6 +28,19 @@ void Events()
 			Scene::Get().camera.transform.pos.y -= 0.1f;
 	}
 }
+/*
+void test(std::mutex &mtx)
+{
+	for (int i = 0; i < 1920 * 1080; i++) {
+		mtx.lock();
+		mtx.unlock();
+	}
+}*/
+
+void MultiThreadingRender()
+{
+	
+}
 
 void UpdateAll(Window &window)
 {
@@ -37,6 +50,8 @@ void UpdateAll(Window &window)
 		Events();
 		old = clock();
 		render.View();
+		//std::thread thr = std::thread{test, std::ref(render.mtx)};
+		//thr.join();
 		double deltaTime = (double)(clock() - old) / CLOCKS_PER_SEC;
 		std::cout << "Render Time: " << deltaTime << std::endl;
 	}
@@ -44,6 +59,7 @@ void UpdateAll(Window &window)
 
 int main()
 {
+	std::cout << THREAD_NUMBER << std::endl;
 	Window window("software renderer", 1920, 1080);
 
 	Object object;

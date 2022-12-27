@@ -1,7 +1,7 @@
 #include <Quaternion.hpp>
 #include <cmath>
 
-Quaternion::Quaternion(const Vector3 &euler)
+Quaternion::Quaternion(Vector3 const &euler)
 {
 	Vector3 c(cosf(euler.z * 0.5), cosf(euler.y * 0.5),
 		  cosf(euler.x * 0.5));
@@ -19,7 +19,7 @@ Quaternion::Quaternion(float _i, float _j, float _k, float _w)
 {
 }
 
-Quaternion Quaternion::operator*(const Quaternion &a) const
+Quaternion Quaternion::operator*(Quaternion const &a) const
 {
 	Quaternion qr;
 
@@ -30,15 +30,12 @@ Quaternion Quaternion::operator*(const Quaternion &a) const
 	return (qr);
 }
 
-static Quaternion QuaternionConjugate(Quaternion q)
+static Quaternion QuaternionConjugate(Quaternion const &q)
 {
-	q.i = -q.i;
-	q.j = -q.j;
-	q.k = -q.k;
-	return (q);
+	return Quaternion(-q.i, -q.j, -q.k, q.w);
 }
 
-Vector3 Quaternion::operator*(const Vector3 &v) const
+Vector3 Quaternion::operator*(Vector3 const &v) const
 {
 	Quaternion result(v.x, v.y, v.z, 0);
 	result = (*this * result) * QuaternionConjugate(*this);
@@ -47,17 +44,10 @@ Vector3 Quaternion::operator*(const Vector3 &v) const
 
 Quaternion::Quaternion() {}
 
-Quaternion::Quaternion(const Quaternion &other)
-{
-	if (this != &other)
-		*this = other;
-}
+Quaternion::Quaternion(Quaternion const &other) { *this = other; }
 
-Quaternion &Quaternion::operator=(const Quaternion &other)
+Quaternion &Quaternion::operator=(Quaternion const &other)
 {
-
-	if (this == &other)
-		return *this;
 	i = other.i;
 	j = other.j;
 	k = other.k;
