@@ -1,33 +1,44 @@
 #include <Render.hpp>
 
+void AllocateRenderData(RenderData &data, unsigned int size)
+{
+	data.tIndex = new unsigned int[size];
+	data.tNormal = new Vector3[size];
+	data.uv = new Vector2[size];
+	data.zBuffer = new float[size];
+}
+
+void DeleteRenderData(RenderData &data)
+{
+	delete[] data.tIndex;
+	delete[] data.tNormal;
+	delete[] data.uv;
+	delete[] data.zBuffer;
+}
+
 Render::Render(Window &_window) : window(_window)
 {
 	with = window.GetXSize();
 	height = window.GetYSize();
-	zBuffer = new float[with * height];
 	focalLegenth = 1.0f / (height * 1);
 	halfHeight = height / 2;
 	halfWith = with / 2;
+
+	data = new RenderData[THREAD_NUMBER];
+	for (unsigned int i = 0; i < THREAD_NUMBER; i++) {
+		AllocateRenderData(data[i], with * height);
+	}
+	threads = new std::thread[THREAD_NUMBER];
+
+	clear_zBuffer();
 }
 
-Render::Render(Render const &other) : window(other.window)
+Render::~Render()
 {
-	if (this != &other)
-		*this = other;
+	for (unsigned int i = 0; i < THREAD_NUMBER; i++) {
+		DeleteRenderData(data[i]);
+	}
 }
-
-Render &Render::operator=(Render const &other)
-{
-	window = other.window;
-	std::copy(other.zBuffer, other.zBuffer + with * height, zBuffer);
-	window = other.window;
-	halfHeight = other.halfHeight;
-	halfWith = other.halfWith;
-	focalLegenth = other.focalLegenth;
-	return *this;
-}
-
-Render::~Render() { delete zBuffer; }
 
 inline Vector3 transform(Vector3 const &pos, Transform const &transform)
 {
@@ -66,12 +77,12 @@ int normalToColor(Vector3 const &normal)
 	       ((int)((normal.z + 1) * 128) << 8) + 255;
 }
 
-inline void Render::RenderObject(Object const &object)
+void Render::RenderObject(Object const &object, RenderData &_data)
 {
 	constexpr float minView = 0.3f;
 
 	Mesh const &mesh = object.mesh;
-	for (unsigned int t = 0; t < mesh.faces_size; t += 3) {
+	for (unsigned int t = _data.faces_start; t < _data.faces_end; t += 3) {
 
 		const Vector3 worldPos[3] = {
 		    transform(mesh.vertices[mesh.faces_vertices[t]],
@@ -151,7 +162,7 @@ inline void Render::RenderObject(Object const &object)
 			const int aMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= aMaxX; x++) {
 				const Vector3 dir =
-				    Vector3(-x + halfWith, -y + halfHeight,
+				    Vector3(halfWith - x, halfHeight - y,
 					    height)
 					.Normalized();
 
@@ -165,13 +176,9 @@ inline void Render::RenderObject(Object const &object)
 				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
-				if (distance < zBuffer[y * height + x] &&
+				if (distance < _data.zBuffer[y * with + x] &&
 				    distance > minView) {
-					zBuffer[y * height + x] = distance;
-					window.SetPixel(
-					    x, y,
-					    normalToColor(Vector3::One() *
-							  distance * 10));
+					_data.zBuffer[y * with + x] = distance;
 				}
 			}
 		}
@@ -188,7 +195,7 @@ inline void Render::RenderObject(Object const &object)
 			for (int x = MaxInt(0, min + 1); x <= bMaxX; x++) {
 
 				const Vector3 dir =
-				    Vector3(-x + halfWith, -y + halfHeight,
+				    Vector3(halfWith - x, halfHeight - y,
 					    height)
 					.Normalized();
 
@@ -202,13 +209,9 @@ inline void Render::RenderObject(Object const &object)
 				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
-				if (distance < zBuffer[y * height + x] &&
+				if (distance < _data.zBuffer[y * with + x] &&
 				    distance > minView) {
-					zBuffer[y * height + x] = distance;
-					window.SetPixel(
-					    x, y,
-					    normalToColor(Vector3::One() *
-							  distance * 10));
+					_data.zBuffer[y * with + x] = distance;
 				}
 			}
 		}
@@ -217,17 +220,95 @@ inline void Render::RenderObject(Object const &object)
 
 void Render::clear_zBuffer()
 {
-	for (int i = 0; i < with * height; i++)
-		zBuffer[i] = std::numeric_limits<float>::max();
+	unsigned int size = with * height;
+	for (unsigned int i = 0; i < THREAD_NUMBER; i++) {
+		for (unsigned int j = 0; j < size; j++)
+			data[i].zBuffer[j] = std::numeric_limits<float>::max();
+	}
+}
+
+static inline int RoundToInt(float value)
+{
+	value = value + 0.5 - (value < 0);
+	return static_cast<int>(value);
+}
+
+void Render::CalculatePixel(RenderData *_data, unsigned int start,
+			    unsigned int end)
+{
+	for (unsigned int y = start; y < end; y++) {
+		for (unsigned int x = 0; x < with; x++) {
+
+			unsigned int index = 0;
+			float distance = std::numeric_limits<float>::max();
+
+			for (unsigned int i = 0; i < THREAD_NUMBER; i++) {
+				float &tmp = _data[i].zBuffer[y * with + x];
+				if (tmp < distance) {
+					distance = tmp;
+					index = i;
+				}
+				tmp = std::numeric_limits<float>::max();
+			}
+
+			window.SetPixel(
+			    x, y,
+			    normalToColor(Vector3::One() * distance) * 10);
+
+			// found index
+			(void)index;
+		}
+	}
 }
 
 void Render::View()
 {
+
 	Scene &scene = Scene::Get();
-	clear_zBuffer();
-	window.Clear(0);
+
 	for (unsigned int i = 0; i < scene.objects.size(); i++) {
-		RenderObject(scene.objects[i]);
+
+		const unsigned int faces_size =
+		    scene.objects[i].mesh.faces_size;
+
+		float start = 0;
+		const float piece = (float)faces_size / (THREAD_NUMBER * 3);
+
+		for (unsigned int j = 0; j < THREAD_NUMBER; j++) {
+
+			data[j].faces_start = RoundToInt(start) * 3;
+			data[j].faces_end = RoundToInt(start += piece) * 3;
+
+			threads[j] = std::thread{&Render::RenderObject, this,
+						 std::ref(scene.objects[i]),
+						 std::ref(data[j])};
+		}
 	}
+
+	for (unsigned int i = 0; i < THREAD_NUMBER; i++)
+		threads[i].join();
+
+	window.Clear(0);
+
+	float start = 0;
+	const float piece = (float)height / THREAD_NUMBER;
+
+	for (unsigned int j = 0; j < THREAD_NUMBER; j++) {
+		const unsigned int start_pos = RoundToInt(start);
+		const unsigned int end_pos = RoundToInt(start += piece);
+		threads[j] = std::thread{&Render::CalculatePixel, this, data,
+					 start_pos, end_pos};
+	}
+
+	for (unsigned int i = 0; i < THREAD_NUMBER; i++)
+		threads[i].join();
+
+	// for (unsigned int x = 100; x < 200; x++) {
+
+	// 	for (unsigned int y = 50; y < 100; y++) {
+	// 		window.SetPixel(x, y, 999999999999);
+	// 	}
+	// }
+
 	window.UpdateSurface();
 }

@@ -58,10 +58,10 @@ Vector3 Vector3::CrossProduct(const Vector3 &a, const Vector3 &b)
 
 Vector3 Vector3::Normalized() const
 {
-	float factor = 1 / Magnitude();
+	float factor = 1.0f / Magnitude();
 	return Vector3(x * factor, y * factor, z * factor);
 }
 
 float Vector3::Magnitude() const { return sqrtf(SqrMagnitude()); }
 
-float Vector3::SqrMagnitude() const { return x * x + y * y + z * z; }
+float Vector3::SqrMagnitude() const { return (x * x) + (y * y) + (z * z); }

@@ -17,12 +17,12 @@ Window::Window(std::string name, unsigned int width, unsigned int height)
 
 int Window::Get_pixel(unsigned int x, unsigned int y) const
 {
-	return _window_pixels[x + (y * _width)];
+	return _window_pixels[y * _width + x];
 }
 
 void Window::SetPixel(unsigned int x, unsigned int y, int color)
 {
-	_window_pixels[x + (y * _width)] = color;
+	_window_pixels[y * _width + x] = color;
 }
 
 unsigned int *Window::GetPixels() const { return _window_pixels; }

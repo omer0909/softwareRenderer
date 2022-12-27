@@ -12,22 +12,27 @@
 const unsigned int THREAD_NUMBER = std::thread::hardware_concurrency();
 
 struct RenderData {
-	int *tIndex;
+	unsigned int *tIndex;
 	Vector2 *uv;
 	Vector3 *tNormal;
 	float *zBuffer;
+
+	unsigned int faces_start;
+	unsigned int faces_end;
 };
 
 class Render
 {
       private:
 	Vector2 worldToScreenPoint(Vector3 const &pos);
-	void RenderObject(Object const &object);
+	void RenderObject(Object const &object, RenderData &_data);
 	bool controlFunctionPoint(Vector2 const &a, Vector2 const &b,
 				  Vector2 const &point);
 	void clear_zBuffer();
-	int height;
-	int with;
+	void CalculatePixel(RenderData *data, unsigned int start,
+			    unsigned int end);
+	unsigned int height;
+	unsigned int with;
 	int halfHeight;
 	int halfWith;
 	float focalLegenth;
@@ -37,12 +42,12 @@ class Render
 
       public:
 	Render(Window &_window);
-	Render(const Render &);
-	Render &operator=(const Render &);
+	Render(const Render &) = delete;
+	Render &operator=(const Render &) = delete;
 	~Render();
 	void View();
 
-	float *zBuffer;
+	RenderData *data;
+	std::thread *threads;
 	Window &window;
-	// std::mutex mtx;
 };
