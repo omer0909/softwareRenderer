@@ -79,8 +79,6 @@ int normalToColor(Vector3 const &normal)
 
 void Render::RenderObject(Object const &object, RenderData &_data)
 {
-	constexpr float minView = 0.3f;
-
 	Mesh const &mesh = object.mesh;
 	for (unsigned int t = _data.faces_start; t < _data.faces_end; t += 3) {
 
@@ -99,9 +97,11 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 		const Vector3 v1v0 = worldPos[1] - worldPos[0];
 		const Vector3 v2v0 = worldPos[2] - worldPos[0];
 
-		const Vector3 normal = Vector3::CrossProduct(v1v0, v2v0);
+		Vector3 normal = Vector3::CrossProduct(v1v0, v2v0);
 		if (Vector3::DotProduct(worldPos[0], normal) > EPSILON)
 			continue;
+
+		normal = normal.Normalized();
 
 		const Vector3 rov0 = -worldPos[0];
 
@@ -161,6 +161,8 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 
 			const int aMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= aMaxX; x++) {
+				const unsigned int index = y * with + x;
+
 				const Vector3 dir =
 				    Vector3(halfWith - x, halfHeight - y,
 					    height)
@@ -176,9 +178,13 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
-				if (distance < _data.zBuffer[y * with + x] &&
+				if (distance < _data.zBuffer[index] &&
 				    distance > minView) {
-					_data.zBuffer[y * with + x] = distance;
+
+					_data.zBuffer[index] = distance;
+					_data.tNormal[index] = normal;
+					_data.tIndex[index] = t;
+					_data.uv[index] = uv;
 				}
 			}
 		}
@@ -193,6 +199,7 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 
 			const int bMaxX = MinInt(max, with - 1);
 			for (int x = MaxInt(0, min + 1); x <= bMaxX; x++) {
+				const unsigned int index = y * with + x;
 
 				const Vector3 dir =
 				    Vector3(halfWith - x, halfHeight - y,
@@ -209,9 +216,12 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 				const float distance =
 				    d * Vector3::DotProduct(-normal, rov0);
 
-				if (distance < _data.zBuffer[y * with + x] &&
+				if (distance < _data.zBuffer[index] &&
 				    distance > minView) {
-					_data.zBuffer[y * with + x] = distance;
+					_data.zBuffer[index] = distance;
+					_data.tNormal[index] = normal;
+					_data.tIndex[index] = t;
+					_data.uv[index] = uv;
 				}
 			}
 		}
@@ -238,25 +248,31 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 {
 	for (unsigned int y = start; y < end; y++) {
 		for (unsigned int x = 0; x < with; x++) {
+			const unsigned int index = y * with + x;
 
-			unsigned int index = 0;
+			unsigned int search = 0;
 			float distance = std::numeric_limits<float>::max();
 
 			for (unsigned int i = 0; i < THREAD_NUMBER; i++) {
-				float &tmp = _data[i].zBuffer[y * with + x];
+				float &tmp = _data[i].zBuffer[index];
 				if (tmp < distance) {
 					distance = tmp;
-					index = i;
+					search = i;
 				}
 				tmp = std::numeric_limits<float>::max();
 			}
 
-			window.SetPixel(
-			    x, y,
-			    normalToColor(Vector3::One() * distance) * 10);
+			if (distance < minView || distance > maxView)
+				continue;
 
-			// found index
-			(void)index;
+			RenderData &found = _data[search];
+
+			window.SetPixel(x, y,
+					normalToColor(found.tNormal[index]));
+
+			// window.SetPixel(
+			//     x, y,
+			//     normalToColor(Vector3::One() * distance) * 10);
 		}
 	}
 }

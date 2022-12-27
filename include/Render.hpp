@@ -50,4 +50,7 @@ class Render
 	RenderData *data;
 	std::thread *threads;
 	Window &window;
+
+	static constexpr float minView = 0.3f;
+	static constexpr float maxView = 10000.0f;
 };
