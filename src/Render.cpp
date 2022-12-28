@@ -53,6 +53,12 @@ inline Vector3 transform(Vector3 const &pos, Transform const &transform)
 inline Vector2 Render::worldToScreenPoint(Vector3 const &pos)
 {
 	float factor = 1.0f / (pos.z * focalLegenth);
+
+	if (pos.z < EPSILON && pos.z > -EPSILON)
+		factor = 0xFFFFFF;
+
+	if (pos.z < 0)
+		factor = -factor;
 	float x = (-pos.x * factor);
 	float y = (-pos.y * factor);
 	return {x + halfWith, y + halfHeight};
@@ -100,8 +106,6 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 		Vector3 normal = Vector3::CrossProduct(v1v0, v2v0);
 		if (Vector3::DotProduct(worldPos[0], normal) > EPSILON)
 			continue;
-
-		normal = normal.Normalized();
 
 		const Vector3 rov0 = -worldPos[0];
 
@@ -266,6 +270,9 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 				continue;
 
 			RenderData &found = _data[search];
+
+			found.tNormal[index] =
+			    found.tNormal[index].Normalized();
 
 			window.SetPixel(x, y,
 					normalToColor(found.tNormal[index]));
