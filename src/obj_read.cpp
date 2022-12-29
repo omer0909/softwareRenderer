@@ -104,16 +104,40 @@ Mesh obj_read(std::string name)
 	Mesh result;
 
 	listCopyToArray<Vector3>(vertices, result.vertices);
-	listCopyToArray<Vector2>(uv, result.uv);
-	listCopyToArray<Vector3>(normals, result.normals);
-	listCopyToArray<unsigned int>(faces_vertices, result.faces_vertices);
-	listCopyToArray<unsigned int>(faces_uv, result.faces_uv);
-	listCopyToArray<unsigned int>(faces_normals, result.faces_normals);
+	result.uv = new Vector2[vertices.size()];
+	result.normals = new Vector3[vertices.size()];
 
-	result.vertices_size = vertices.size();
-	result.uv_size = uv.size();
-	result.normals_size = normals.size();
+	Vector3 *tmpVertices = new Vector3[0];
+	Vector2 *tmpUV = new Vector2[0];
+	Vector3 *tmpNormals = new Vector3[0];
+
+	listCopyToArray<Vector3>(vertices, tmpVertices);
+	listCopyToArray<Vector2>(uv, tmpUV);
+	listCopyToArray<Vector3>(normals, tmpNormals);
+
 	result.faces_size = faces_vertices.size();
+
+	result.vertices = new Vector3[faces_vertices.size()];
+	int i = 0;
+	for (auto &val : faces_vertices) {
+		result.vertices[i++] = tmpVertices[val];
+	}
+
+	result.uv = new Vector2[faces_uv.size()];
+	i = 0;
+	for (auto &val : faces_uv) {
+		result.uv[i++] = tmpUV[val];
+	}
+
+	result.normals = new Vector3[faces_normals.size()];
+	i = 0;
+	for (auto &val : faces_normals) {
+		result.normals[i++] = tmpNormals[val];
+	}
+
+	delete[] tmpVertices;
+	delete[] tmpUV;
+	delete[] tmpNormals;
 
 	return result;
 }

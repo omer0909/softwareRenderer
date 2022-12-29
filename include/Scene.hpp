@@ -4,6 +4,7 @@
 #include <Object.hpp>
 #include <vector>
 #include <Singleton.hpp>
+#include <Window.hpp>
 
 class Scene : public Singleton<Scene>
 {
@@ -12,4 +13,5 @@ class Scene : public Singleton<Scene>
 	~Scene();
 	std::vector<Object> objects;
 	Camera camera;
+	Window *window;
 };

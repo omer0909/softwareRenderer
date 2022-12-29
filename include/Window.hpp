@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL.h>
+#include <png.h>
 #include <iostream>
 
 class Window

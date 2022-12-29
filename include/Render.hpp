@@ -5,17 +5,25 @@
 #include <limits>
 #include <thread>
 
+#define WIDTH 1920
+#define HEIGHT 1080
+
 #define EPSILON 0.00001f
 #define PI 3.1415926
 #define ANGLE_TO_RADIAN (PI / 180)
 
 const unsigned int THREAD_NUMBER = std::thread::hardware_concurrency();
 
-struct RenderData {
-	unsigned int *tIndex;
+struct TrisData {
+	Vector3 normals[3];
 	Vector2 *uv;
-	Vector3 *tNormal;
+};
+
+struct RenderData {
+	Vector2 *tuv;
 	float *zBuffer;
+
+	TrisData *trisData;
 
 	unsigned int faces_start;
 	unsigned int faces_end;

@@ -2,18 +2,18 @@
 
 void AllocateRenderData(RenderData &data, unsigned int size)
 {
-	data.tIndex = new unsigned int[size];
-	data.tNormal = new Vector3[size];
-	data.uv = new Vector2[size];
+	data.trisData = new TrisData[size];
+	data.tuv = new Vector2[size];
 	data.zBuffer = new float[size];
+	data.trisData = new TrisData[size];
 }
 
 void DeleteRenderData(RenderData &data)
 {
-	delete[] data.tIndex;
-	delete[] data.tNormal;
-	delete[] data.uv;
+	delete[] data.trisData;
+	delete[] data.tuv;
 	delete[] data.zBuffer;
+	delete[] data.trisData;
 }
 
 Render::Render(Window &_window) : window(_window)
@@ -76,25 +76,18 @@ inline bool Render::controlFunctionPoint(Vector2 const &a, Vector2 const &b,
 static inline int MinInt(int a, int b) { return (a < b) ? a : b; }
 static inline int MaxInt(int a, int b) { return (a < b) ? b : a; }
 
-int normalToColor(Vector3 const &normal)
-{
-	return ((int)((normal.x + 1) * 128) << 24) +
-	       ((int)((normal.y + 1) * 128) << 16) +
-	       ((int)((normal.z + 1) * 128) << 8) + 255;
-}
-
 void Render::RenderObject(Object const &object, RenderData &_data)
 {
 	Mesh const &mesh = object.mesh;
+
+	Quaternion rotation_normal =
+	    Scene::Get().camera.transform.rotation * object.transform.rotation;
 	for (unsigned int t = _data.faces_start; t < _data.faces_end; t += 3) {
 
 		const Vector3 worldPos[3] = {
-		    transform(mesh.vertices[mesh.faces_vertices[t]],
-			      object.transform),
-		    transform(mesh.vertices[mesh.faces_vertices[t + 1]],
-			      object.transform),
-		    transform(mesh.vertices[mesh.faces_vertices[t + 2]],
-			      object.transform)};
+		    transform(mesh.vertices[t], object.transform),
+		    transform(mesh.vertices[t + 1], object.transform),
+		    transform(mesh.vertices[t + 2], object.transform)};
 
 		if (worldPos[0].z < minView && worldPos[1].z < minView &&
 		    worldPos[2].z < minView)
@@ -103,7 +96,7 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 		const Vector3 v1v0 = worldPos[1] - worldPos[0];
 		const Vector3 v2v0 = worldPos[2] - worldPos[0];
 
-		Vector3 normal = Vector3::CrossProduct(v1v0, v2v0);
+		const Vector3 normal = Vector3::CrossProduct(v1v0, v2v0);
 		if (Vector3::DotProduct(worldPos[0], normal) > EPSILON)
 			continue;
 
@@ -132,11 +125,6 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 
 		if (tris2d[2].y < 0 || tris2d[0].y > height)
 			continue;
-
-		Vector3 tNormals[3];
-		tNormals[sIndex[0]] = mesh.normals[mesh.faces_normals[t]];
-		tNormals[sIndex[1]] = mesh.normals[mesh.faces_normals[t + 1]];
-		tNormals[sIndex[2]] = mesh.normals[mesh.faces_normals[t + 2]];
 
 		const int right =
 		    controlFunctionPoint(tris2d[0], tris2d[2], tris2d[1]);
@@ -176,7 +164,7 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 				    Vector3::CrossProduct(rov0, dir);
 				const float d =
 				    1.0 / Vector3::DotProduct(dir, normal);
-				const Vector2 uv(
+				const Vector2 tuv(
 				    d * Vector3::DotProduct(-q, v2v0),
 				    d * Vector3::DotProduct(q, v1v0));
 				const float distance =
@@ -186,9 +174,21 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 				    distance > minView) {
 
 					_data.zBuffer[index] = distance;
-					_data.tNormal[index] = normal;
-					_data.tIndex[index] = t;
-					_data.uv[index] = uv;
+
+					_data.trisData[index].normals[0] =
+					    rotation_normal * mesh.normals[t];
+
+					_data.trisData[index].normals[1] =
+					    rotation_normal *
+					    mesh.normals[t + 1];
+
+					_data.trisData[index].normals[2] =
+					    rotation_normal *
+					    mesh.normals[t + 2];
+
+					_data.trisData[index].uv = mesh.uv + t;
+
+					_data.tuv[index] = tuv;
 				}
 			}
 		}
@@ -214,7 +214,7 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 				    Vector3::CrossProduct(rov0, dir);
 				const float d =
 				    1.0 / Vector3::DotProduct(dir, normal);
-				const Vector2 uv(
+				const Vector2 tuv(
 				    d * Vector3::DotProduct(-q, v2v0),
 				    d * Vector3::DotProduct(q, v1v0));
 				const float distance =
@@ -222,10 +222,29 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 
 				if (distance < _data.zBuffer[index] &&
 				    distance > minView) {
+
 					_data.zBuffer[index] = distance;
-					_data.tNormal[index] = normal;
-					_data.tIndex[index] = t;
-					_data.uv[index] = uv;
+
+					{
+						_data.trisData[index]
+						    .normals[0] =
+						    rotation_normal *
+						    mesh.normals[t];
+
+						_data.trisData[index]
+						    .normals[1] =
+						    rotation_normal *
+						    mesh.normals[t + 1];
+
+						_data.trisData[index]
+						    .normals[2] =
+						    rotation_normal *
+						    mesh.normals[t + 2];
+					}
+
+					_data.trisData[index].uv = mesh.uv + t;
+
+					_data.tuv[index] = tuv;
 				}
 			}
 		}
@@ -245,6 +264,18 @@ static inline int RoundToInt(float value)
 {
 	value = value + 0.5 - (value < 0);
 	return static_cast<int>(value);
+}
+
+int normalToColor(Vector3 const &normal)
+{
+	return ((int)((normal.x + 1) * 128) +
+	       ((int)((normal.y + 1) * 128) << 16) +
+	       ((int)((normal.z + 1) * 128) << 8)) | 0xFF000000;
+}
+
+inline static Vector3 TrisLerp(const Vector3 *v, Vector2 const &uv)
+{
+	return v[1] * uv.x + v[2] * uv.y + v[0] * (1 - (uv.x + uv.y));
 }
 
 void Render::CalculatePixel(RenderData *_data, unsigned int start,
@@ -271,22 +302,16 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 
 			RenderData &found = _data[search];
 
-			found.tNormal[index] =
-			    found.tNormal[index].Normalized();
-
 			window.SetPixel(x, y,
-					normalToColor(found.tNormal[index]));
-
-			// window.SetPixel(
-			//     x, y,
-			//     normalToColor(Vector3::One() * distance) * 10);
+					normalToColor(TrisLerp(
+					    found.trisData[index].normals,
+					    found.tuv[index])));
 		}
 	}
 }
 
 void Render::View()
 {
-
 	Scene &scene = Scene::Get();
 
 	for (unsigned int i = 0; i < scene.objects.size(); i++) {

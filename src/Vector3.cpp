@@ -43,6 +43,11 @@ Vector3 Vector3::operator-(const Vector3 &a) const
 	return Vector3(x - a.x, y - a.y, z - a.z);
 }
 
+Vector3 Vector3::operator+(const Vector3 &a) const
+{
+	return Vector3(x + a.x, y + a.y, z + a.z);
+}
+
 Vector3 Vector3::operator-() const { return Vector3(-x, -y, -z); }
 
 float Vector3::DotProduct(Vector3 const &a, Vector3 const &b)

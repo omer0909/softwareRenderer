@@ -1,3 +1,3 @@
 # softwareRenderer
 
-![renderResult](https://github.com/omer0909/softwareRenderer/blob/main/result.JPG)
+![renderResult](https://github.com/omer0909/softwareRenderer/blob/main/result.png)
