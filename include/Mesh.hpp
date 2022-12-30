@@ -16,6 +16,7 @@ class Mesh
 	Vector3 *vertices;
 	Vector2 *uv;
 	Vector3 *normals;
+	Vector3 *tVertices;
 
 	unsigned int faces_size;
 };

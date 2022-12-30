@@ -23,7 +23,8 @@ set(PROJECT_SOURCES ${PROJECT_SOURCE_DIR}/main.cpp
                     ${PROJECT_SOURCE_DIR}/Transform.cpp
                     ${PROJECT_SOURCE_DIR}/Vector2.cpp
                     ${PROJECT_SOURCE_DIR}/Vector3.cpp
-                    ${PROJECT_SOURCE_DIR}/Window.cpp)
+                    ${PROJECT_SOURCE_DIR}/Window.cpp
+                    ${PROJECT_SOURCE_DIR}/Light.cpp)
     
 set(PROJECT_INCLUDE_DIR 
     ${PROJECT_DIR}/include

@@ -9,8 +9,7 @@
 #define HEIGHT 1080
 
 #define EPSILON 0.00001f
-#define PI 3.1415926
-#define ANGLE_TO_RADIAN (PI / 180)
+#define ANGLE_TO_RADIAN (M_PI / 180)
 
 const unsigned int THREAD_NUMBER = std::thread::hardware_concurrency();
 

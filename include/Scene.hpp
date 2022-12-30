@@ -5,6 +5,7 @@
 #include <vector>
 #include <Singleton.hpp>
 #include <Window.hpp>
+#include <Light.hpp>
 
 class Scene : public Singleton<Scene>
 {
@@ -12,6 +13,8 @@ class Scene : public Singleton<Scene>
 	Scene();
 	~Scene();
 	std::vector<Object> objects;
+	std::vector<Light> lights;
 	Camera camera;
 	Window *window;
+	float deltaTime;
 };

@@ -57,6 +57,37 @@ unsigned int screen_to_image(const unsigned int color)
 
 void Events()
 {
+	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+	float _deltaTime = Scene::Get().deltaTime;
+
+	constexpr float moveSpeed = 2;
+	constexpr float turnSpeed = 2;
+	Transform &_cam = Scene::Get().camera.transform;
+
+	if (keystate[SDL_SCANCODE_W])
+		_cam.pos = _cam.pos + _cam.Forward() * (moveSpeed * _deltaTime);
+	if (keystate[SDL_SCANCODE_S])
+		_cam.pos = _cam.pos - _cam.Forward() * (moveSpeed * _deltaTime);
+	if (keystate[SDL_SCANCODE_A])
+		_cam.pos = _cam.pos + _cam.Right() * (moveSpeed * _deltaTime);
+	if (keystate[SDL_SCANCODE_D])
+		_cam.pos = _cam.pos - _cam.Right() * (moveSpeed * _deltaTime);
+	if (keystate[SDL_SCANCODE_X])
+		_cam.pos = _cam.pos + _cam.Up() * (moveSpeed * _deltaTime);
+	if (keystate[SDL_SCANCODE_C])
+		_cam.pos = _cam.pos - _cam.Up() * (moveSpeed * _deltaTime);
+
+	if (keystate[SDL_SCANCODE_LEFT])
+		_cam.rotation =
+		    _cam.rotation *
+		    (Quaternion(Vector3(0, -45 * ANGLE_TO_RADIAN, 0))
+			 .SMultiplay(_deltaTime * turnSpeed));
+
+	if (keystate[SDL_SCANCODE_RIGHT])
+		_cam.rotation = _cam.rotation *
+				(Quaternion(Vector3(0, 45 * ANGLE_TO_RADIAN, 0))
+				     .SMultiplay(_deltaTime * turnSpeed));
+
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		if (e.type == SDL_QUIT) {
@@ -67,19 +98,6 @@ void Events()
 		    (e.key.keysym.sym == SDLK_ESCAPE)) {
 			exit(0);
 		}
-
-		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_s))
-			Scene::Get().camera.transform.pos.z -= 0.1f;
-		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_w))
-			Scene::Get().camera.transform.pos.z += 0.1f;
-		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_a))
-			Scene::Get().camera.transform.pos.x += 0.1f;
-		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_d))
-			Scene::Get().camera.transform.pos.x -= 0.1f;
-		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_c))
-			Scene::Get().camera.transform.pos.y += 0.1f;
-		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_x))
-			Scene::Get().camera.transform.pos.y -= 0.1f;
 
 		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_p)) {
 			Window &_window = *Scene::Get().window;
@@ -100,26 +118,49 @@ void Events()
 	}
 }
 
-[[gnu::noinline]] void Benchmark()
+[[gnu::noinline]] void DeltaTimeCalculate()
 {
 	static auto start = std::chrono::system_clock::now();
 
 	auto now = std::chrono::system_clock::now();
 
-	std::chrono::duration<double> elapsed_seconds = now - start;
+	std::chrono::duration<float> elapsed_seconds = now - start;
 
 	std::cout << static_cast<int>(1 / elapsed_seconds.count()) << " fps"
 		  << std::endl;
+
+	Scene::Get().deltaTime = elapsed_seconds.count();
 	start = now;
+}
+
+void JustRender(Render &render)
+{
+	render.View();
+	Window &_window = *Scene::Get().window;
+	unsigned int size = _window.GetYSize() * _window.GetXSize();
+
+	unsigned int *image = new unsigned int[size];
+	unsigned int *screen = _window.GetPixels();
+
+	for (unsigned int i = 0; i < size; i++)
+		image[i] = screen_to_image(screen[i]);
+
+	save_png("test.png", _window.GetXSize(), _window.GetYSize(),
+		 reinterpret_cast<unsigned char *>(image));
+	delete[] image;
+	exit(0);
 }
 
 void UpdateAll()
 {
 	Render render(*Scene::Get().window);
+
+	//JustRender(render);
+
 	while (true) {
 		Events();
 		render.View();
-		Benchmark();
+		DeltaTimeCalculate();
 	}
 }
 
@@ -135,13 +176,21 @@ int main(int argc, char **argv)
 
 	Scene::Get().window = &_window;
 
+	Scene::Get().window = &_window;
+
 	Object object;
 	object.mesh = obj_read(argv[1]);
+
 	object.transform.rotation =
 	    Quaternion(Vector3(0, 180 * ANGLE_TO_RADIAN, 0));
 	object.transform.pos = Vector3::Zero();
 
+	Light light = Light();
+	light.pos = Vector3(1, 0, -1);
+	light.intensity = 100;
+
 	Scene::Get().objects.push_back(object);
+	Scene::Get().lights.push_back(light);
 
 	Scene::Get().camera.transform.pos = Vector3(0, 0, -3);
 	Scene::Get().camera.transform.rotation = Quaternion::Zero();

@@ -139,5 +139,7 @@ Mesh obj_read(std::string name)
 	delete[] tmpUV;
 	delete[] tmpNormals;
 
+	result.tVertices = new Vector3[result.faces_size];
+
 	return result;
 }

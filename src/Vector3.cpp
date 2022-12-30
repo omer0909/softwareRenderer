@@ -9,6 +9,12 @@ Vector3 Vector3::operator*(const float &a) const
 	return Vector3(x * a, y * a, z * a);
 }
 
+Vector3 Vector3::operator/(const float &a) const
+{
+	const float factor = 1.0f / a;
+	return Vector3(x * factor, y * factor, z * factor);
+}
+
 Vector3::Vector3() {}
 
 Vector3::Vector3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
@@ -63,10 +69,9 @@ Vector3 Vector3::CrossProduct(const Vector3 &a, const Vector3 &b)
 
 Vector3 Vector3::Normalized() const
 {
-	float factor = 1.0f / Magnitude();
-	return Vector3(x * factor, y * factor, z * factor);
+	return *this / Magnitude();
 }
 
-float Vector3::Magnitude() const { return sqrtf(SqrMagnitude()); }
+float Vector3::Magnitude() const { return std::sqrt(SqrMagnitude()); }
 
 float Vector3::SqrMagnitude() const { return (x * x) + (y * y) + (z * z); }

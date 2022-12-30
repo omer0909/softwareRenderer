@@ -25,3 +25,13 @@ Vector2 Vector2::operator-(const Vector2 &a) const
 {
 	return Vector2(x - a.x, y - a.y);
 }
+
+Vector2 Vector2::operator*(const Vector2 &a) const
+{
+	return Vector2(x * a.x, y * a.y);
+}
+
+Vector2 Vector2::operator*(const float &a) const
+{
+	return Vector2(x * a, y * a);
+}

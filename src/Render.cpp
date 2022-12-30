@@ -47,7 +47,7 @@ inline Vector3 transform(Vector3 const &pos, Transform const &transform)
 	nPos = nPos - transform.pos;
 	nPos = nPos - cam.pos;
 	nPos = cam.rotation * nPos;
-	return {nPos};
+	return nPos;
 }
 
 inline Vector2 Render::worldToScreenPoint(Vector3 const &pos)
@@ -76,18 +76,26 @@ inline bool Render::controlFunctionPoint(Vector2 const &a, Vector2 const &b,
 static inline int MinInt(int a, int b) { return (a < b) ? a : b; }
 static inline int MaxInt(int a, int b) { return (a < b) ? b : a; }
 
+static inline float MinFloat(float a, float b) { return (a < b) ? a : b; }
+static inline float MaxFloat(float a, float b) { return (a < b) ? b : a; }
+
 void Render::RenderObject(Object const &object, RenderData &_data)
 {
 	Mesh const &mesh = object.mesh;
 
 	Quaternion rotation_normal =
 	    Scene::Get().camera.transform.rotation * object.transform.rotation;
+
 	for (unsigned int t = _data.faces_start; t < _data.faces_end; t += 3) {
 
-		const Vector3 worldPos[3] = {
-		    transform(mesh.vertices[t], object.transform),
-		    transform(mesh.vertices[t + 1], object.transform),
-		    transform(mesh.vertices[t + 2], object.transform)};
+		mesh.tVertices[t] =
+		    transform(mesh.vertices[t], object.transform);
+		mesh.tVertices[t + 1] =
+		    transform(mesh.vertices[t + 1], object.transform);
+		mesh.tVertices[t + 2] =
+		    transform(mesh.vertices[t + 2], object.transform);
+
+		const Vector3 *worldPos = mesh.tVertices + t;
 
 		if (worldPos[0].z < minView && worldPos[1].z < minView &&
 		    worldPos[2].z < minView)
@@ -268,9 +276,10 @@ static inline int RoundToInt(float value)
 
 int normalToColor(Vector3 const &normal)
 {
-	return ((int)((normal.x + 1) * 128) +
-	       ((int)((normal.y + 1) * 128) << 16) +
-	       ((int)((normal.z + 1) * 128) << 8)) | 0xFF000000;
+	return ((int)((normal.x + 1) * 127) +
+		((int)((normal.y + 1) * 127) << 16) +
+		((int)((normal.z + 1) * 127) << 8)) |
+	       0xFF000000;
 }
 
 inline static Vector3 TrisLerp(const Vector3 *v, Vector2 const &uv)
@@ -278,9 +287,82 @@ inline static Vector3 TrisLerp(const Vector3 *v, Vector2 const &uv)
 	return v[1] * uv.x + v[2] * uv.y + v[0] * (1 - (uv.x + uv.y));
 }
 
+inline Vector3 camTransform(Vector3 const &pos)
+{
+	Transform &cam = Scene::Get().camera.transform;
+	Vector3 nPos = pos - cam.pos;
+	nPos = cam.rotation * nPos;
+	return nPos;
+}
+
+bool IntersectTriangle(Vector3 const &orig, Vector3 const &dir,
+		       const Vector3 *tris, float &distance, Vector2 &uv)
+{
+
+	const Vector3 edge1 = tris[1] - tris[0];
+	const Vector3 edge2 = tris[2] - tris[0];
+
+	const Vector3 pvec = Vector3::CrossProduct(dir, edge2);
+
+	const float det = Vector3::DotProduct(edge1, pvec);
+
+	const Vector3 tvec = orig - tris[0];
+	const float inv_det = 1.0 / det;
+
+	const Vector3 qvec = Vector3::CrossProduct(tvec, edge1);
+
+	if (det > EPSILON) {
+		uv.x = Vector3::DotProduct(tvec, pvec);
+		if (uv.x < 0.0f || uv.x > det)
+			return false;
+
+		uv.y = Vector3::DotProduct(dir, qvec);
+		if (uv.y < 0.0f || uv.x + uv.y > det)
+			return false;
+
+	} else if (det < -EPSILON) {
+		uv.x = Vector3::DotProduct(tvec, pvec);
+		if (uv.x > 0.0 || uv.x < det)
+			return false;
+
+		uv.y = Vector3::DotProduct(dir, qvec);
+		if (uv.y > 0.0 || uv.x + uv.y < det)
+			return 0;
+	} else
+		return false;
+
+	distance = Vector3::DotProduct(edge2, qvec) * inv_det;
+	uv = uv * inv_det;
+
+	return true;
+}
+
+bool LightEffect(Vector3 const &lPos, Vector3 const &dir, float distance)
+{
+	Scene &scene = Scene::Get();
+
+	for (unsigned int i = 0; i < scene.objects.size(); i++) {
+		const Mesh &mesh = scene.objects[i].mesh;
+		for (unsigned int t = 0; t < mesh.faces_size; t += 3) {
+			float rayDistance;
+			Vector2 uv;
+			if (IntersectTriangle(lPos, dir, mesh.tVertices + t,
+					      rayDistance, uv) &&
+			    rayDistance < distance - EPSILON * 10)
+				return true;
+		}
+	}
+	return false;
+}
+
 void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			    unsigned int end)
 {
+	Scene &scene = Scene::Get();
+
+	for (auto &light : scene.lights)
+		light.tPos = camTransform(light.pos);
+
 	for (unsigned int y = start; y < end; y++) {
 		for (unsigned int x = 0; x < with; x++) {
 			const unsigned int index = y * with + x;
@@ -301,11 +383,53 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 				continue;
 
 			RenderData &found = _data[search];
+			(void)found;
 
-			window.SetPixel(x, y,
-					normalToColor(TrisLerp(
-					    found.trisData[index].normals,
-					    found.tuv[index])));
+			const Vector3 dir = Vector3(halfWith - (int)x,
+						    halfHeight - (int)y, height)
+						.Normalized();
+			Vector3 pos = dir * distance;
+
+			Vector3 normal = TrisLerp(found.trisData[index].normals,
+						  found.tuv[index]);
+
+			const Light &light = scene.lights[0];
+
+			const Vector3 lPos = light.tPos;
+
+			const Vector3 lDiff = pos - lPos;
+			const float lDistance = lDiff.Magnitude();
+			const Vector3 lDir = lDiff / lDistance;
+
+			//-----------light---------
+			// 0-255
+			unsigned int color =
+			    (1 - Vector3::DotProduct(normal, lDir)) * 127;
+			color /= MaxFloat(1, lDistance * lDistance * lDistance);
+			color |= 0xFF000000;
+
+			window.SetPixel(x, y, color);
+
+			//-----------shadow---------
+			// if (LightEffect(lPos, lDir, lDistance))
+			// 	window.SetPixel(x, y, 0xFF000000);
+			// else
+			// 	window.SetPixel(
+			// 	    x, y,
+			// 	    normalToColor(
+			// 		Vector3::One() *
+			// 		-Vector3::DotProduct(normal, lDir)));
+
+			//-----------local_normal---------
+			// window.SetPixel(x, y,
+			// 		normalToColor(TrisLerp(
+			// 		    found.trisData[index].normals,
+			// 		    found.tuv[index])));
+
+			//-----------local_position---------
+			//window.SetPixel(x, y, normalToColor(pos));
+
+			
 		}
 	}
 }
@@ -350,13 +474,6 @@ void Render::View()
 
 	for (unsigned int i = 0; i < THREAD_NUMBER; i++)
 		threads[i].join();
-
-	// for (unsigned int x = 100; x < 200; x++) {
-
-	// 	for (unsigned int y = 50; y < 100; y++) {
-	// 		window.SetPixel(x, y, 999999999999);
-	// 	}
-	// }
 
 	window.UpdateSurface();
 }
