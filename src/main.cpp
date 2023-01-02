@@ -151,11 +151,50 @@ void JustRender(Render &render)
 	exit(0);
 }
 
+/*
+unsigned int nonColorGradient(int x)
+{
+	x /= 6;
+
+	x /= 3;
+	x %= 256;
+	return x | x << 8 | x << 16;
+}
+
+unsigned int colorGradient(int x)
+{
+	x /= 6;
+
+	int extra = x % 3;
+	x /= 3;
+	x %= 256;
+	return x + (extra > 0 ? 1 : 0) | (x + (extra > 1 ? 1 : 0)) << 8 |
+	       x << 16;
+}
+*/
 void UpdateAll()
 {
+	/*
+		Window &window = *Scene::Get().window;
+		unsigned int halfHeight = HEIGHT / 2;
+
+		for (unsigned int y = 0; y < halfHeight; y++) {
+			for (unsigned int x = 0; x < WIDTH; x++) {
+				window.SetPixel(x, y, nonColorGradient(x));
+			}
+		}
+		for (unsigned int y = halfHeight; y < HEIGHT; y++) {
+			for (unsigned int x = 0; x < WIDTH; x++) {
+				window.SetPixel(x, y, colorGradient(x));
+			}
+		}
+		window.UpdateSurface();
+		Events();
+		return;
+*/
 	Render render(*Scene::Get().window);
 
-	//JustRender(render);
+	// JustRender(render);
 
 	while (true) {
 		Events();
@@ -185,12 +224,17 @@ int main(int argc, char **argv)
 	    Quaternion(Vector3(0, 180 * ANGLE_TO_RADIAN, 0));
 	object.transform.pos = Vector3::Zero();
 
-	Light light = Light();
-	light.pos = Vector3(1, 0, -1);
-	light.intensity = 100;
+	PointLight pointLight = PointLight();
+	pointLight.pos = Vector3(1, 0, -1);
+	pointLight.intensity = 100;
+	Scene::Get().pointLights.push_back(pointLight);
+
+	// DirectionalLight directionalLight = DirectionalLight();
+	// directionalLight.dir = Vector3(0, -1, 0);
+	// directionalLight.intensity = 100;
+	// Scene::Get().directionalLights.push_back(directionalLight);
 
 	Scene::Get().objects.push_back(object);
-	Scene::Get().lights.push_back(light);
 
 	Scene::Get().camera.transform.pos = Vector3(0, 0, -3);
 	Scene::Get().camera.transform.rotation = Quaternion::Zero();

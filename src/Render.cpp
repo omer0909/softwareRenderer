@@ -73,12 +73,6 @@ inline bool Render::controlFunctionPoint(Vector2 const &a, Vector2 const &b,
 	return (edge1.x * edge2.y) - (edge1.y * edge2.x) > 0;
 }
 
-static inline int MinInt(int a, int b) { return (a < b) ? a : b; }
-static inline int MaxInt(int a, int b) { return (a < b) ? b : a; }
-
-static inline float MinFloat(float a, float b) { return (a < b) ? a : b; }
-static inline float MaxFloat(float a, float b) { return (a < b) ? b : a; }
-
 void Render::RenderObject(Object const &object, RenderData &_data)
 {
 	Mesh const &mesh = object.mesh;
@@ -97,8 +91,9 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 
 		const Vector3 *worldPos = mesh.tVertices + t;
 
-		if (worldPos[0].z < minView && worldPos[1].z < minView &&
-		    worldPos[2].z < minView)
+		if (worldPos[0].z < Camera::minView &&
+		    worldPos[1].z < Camera::minView &&
+		    worldPos[2].z < Camera::minView)
 			continue;
 
 		const Vector3 v1v0 = worldPos[1] - worldPos[0];
@@ -151,16 +146,18 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 			add[i] = a.x - a.y * inclination[i];
 		}
 
-		const int aMaxY = MinInt(tris2d[1].y, height - 1);
-		for (int y = MaxInt(0, tris2d[0].y + 1); y <= aMaxY; y++) {
+		const int aMaxY = std::min((int)tris2d[1].y, (int)height - 1);
+		for (int y = std::max(0, (int)tris2d[0].y + 1); y <= aMaxY;
+		     y++) {
 			const int a = right;
 			const int b = !right;
 
 			const float max = y * inclination[a] + add[a];
 			const float min = y * inclination[b] + add[b];
 
-			const int aMaxX = MinInt(max, with - 1);
-			for (int x = MaxInt(0, min + 1); x <= aMaxX; x++) {
+			const int aMaxX = std::min((int)max, (int)with - 1);
+			for (int x = std::max(0, (int)min + 1); x <= aMaxX;
+			     x++) {
 				const unsigned int index = y * with + x;
 
 				const Vector3 dir =
@@ -179,7 +176,7 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 				    d * Vector3::DotProduct(-normal, rov0);
 
 				if (distance < _data.zBuffer[index] &&
-				    distance > minView) {
+				    distance > Camera::minView) {
 
 					_data.zBuffer[index] = distance;
 
@@ -201,16 +198,18 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 			}
 		}
 
-		const int bMaxY = MinInt(tris2d[2].y, height - 1);
-		for (int y = MaxInt(0, tris2d[1].y + 1); y <= bMaxY; y++) {
+		const int bMaxY = std::min((int)tris2d[2].y, (int)height - 1);
+		for (int y = std::max(0, (int)tris2d[1].y + 1); y <= bMaxY;
+		     y++) {
 			const int a = right + 1;
 			const int b = !right + 1;
 
 			const float max = y * inclination[b] + add[b];
 			const float min = y * inclination[a] + add[a];
 
-			const int bMaxX = MinInt(max, with - 1);
-			for (int x = MaxInt(0, min + 1); x <= bMaxX; x++) {
+			const int bMaxX = std::min((int)max, (int)with - 1);
+			for (int x = std::max(0, (int)min + 1); x <= bMaxX;
+			     x++) {
 				const unsigned int index = y * with + x;
 
 				const Vector3 dir =
@@ -229,7 +228,7 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 				    d * Vector3::DotProduct(-normal, rov0);
 
 				if (distance < _data.zBuffer[index] &&
-				    distance > minView) {
+				    distance > Camera::minView) {
 
 					_data.zBuffer[index] = distance;
 
@@ -355,12 +354,27 @@ bool LightEffect(Vector3 const &lPos, Vector3 const &dir, float distance)
 	return false;
 }
 
+unsigned int FloatToColor(float val)
+{
+	unsigned int color = val * 127;
+	return color | color << 8 | color << 16 | 0xFF000000;
+}
+
+Vector3 Reflection(Vector3 const &ray, Vector3 const &ground)
+{
+	const float length = Vector3::DotProduct(ray, ground);
+	const Vector3 center = ground * length;
+	return (center * 2) - ray;
+}
+
+void CalculateDirectionalLightDepth() {}
+
 void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			    unsigned int end)
 {
 	Scene &scene = Scene::Get();
 
-	for (auto &light : scene.lights)
+	for (auto &light : scene.pointLights)
 		light.tPos = camTransform(light.pos);
 
 	for (unsigned int y = start; y < end; y++) {
@@ -379,7 +393,8 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 				tmp = std::numeric_limits<float>::max();
 			}
 
-			if (distance < minView || distance > maxView)
+			if (distance < Camera::minView ||
+			    distance > Camera::maxView)
 				continue;
 
 			RenderData &found = _data[search];
@@ -393,7 +408,15 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			Vector3 normal = TrisLerp(found.trisData[index].normals,
 						  found.tuv[index]);
 
-			const Light &light = scene.lights[0];
+			// //-----------directional light---------
+			// Vector3 lDir = scene.directionalLights[0].dir;
+			// // 0-255
+			// unsigned int color =FloatToColor(1 -
+			// Vector3::DotProduct(normal, lDir));
+			// window.SetPixel(x, y, color);
+
+			// //-----------point light---------
+			const PointLight &light = scene.pointLights[0];
 
 			const Vector3 lPos = light.tPos;
 
@@ -401,24 +424,26 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			const float lDistance = lDiff.Magnitude();
 			const Vector3 lDir = lDiff / lDistance;
 
-			//-----------light---------
-			// 0-255
-			unsigned int color =
-			    (1 - Vector3::DotProduct(normal, lDir)) * 127;
-			color /= MaxFloat(1, lDistance * lDistance * lDistance);
-			color |= 0xFF000000;
+			const bool inShadow =
+			    Vector3::DotProduct(normal, lDir) < -EPSILON;
 
-			window.SetPixel(x, y, color);
+			float color =
+			    std::max(0.0f, -Vector3::DotProduct(normal, lDir));
+			color /=
+			    std::max(1.0f, lDistance * lDistance * lDistance);
+			// color /= lDistance * lDistance * lDistance;
+			// color = std::min(255u, color);
 
-			//-----------shadow---------
-			// if (LightEffect(lPos, lDir, lDistance))
+			if (inShadow &&
+			    Vector3::DotProduct(lDir, Reflection(dir, normal)) >
+				1 - 0.02f / lDistance) {
+				color = 1;
+			}
+			window.SetPixel(x, y, FloatToColor(color));
+
+			// //-----------shadow---------
+			// if (inShadow && LightEffect(lPos, lDir, lDistance))
 			// 	window.SetPixel(x, y, 0xFF000000);
-			// else
-			// 	window.SetPixel(
-			// 	    x, y,
-			// 	    normalToColor(
-			// 		Vector3::One() *
-			// 		-Vector3::DotProduct(normal, lDir)));
 
 			//-----------local_normal---------
 			// window.SetPixel(x, y,
@@ -427,9 +452,7 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			// 		    found.tuv[index])));
 
 			//-----------local_position---------
-			//window.SetPixel(x, y, normalToColor(pos));
-
-			
+			// window.SetPixel(x, y, normalToColor(pos));
 		}
 	}
 }

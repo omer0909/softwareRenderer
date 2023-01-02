@@ -24,7 +24,9 @@ set(PROJECT_SOURCES ${PROJECT_SOURCE_DIR}/main.cpp
                     ${PROJECT_SOURCE_DIR}/Vector2.cpp
                     ${PROJECT_SOURCE_DIR}/Vector3.cpp
                     ${PROJECT_SOURCE_DIR}/Window.cpp
-                    ${PROJECT_SOURCE_DIR}/Light.cpp)
+                    ${PROJECT_SOURCE_DIR}/Light.cpp
+                    ${PROJECT_SOURCE_DIR}/PointLight.cpp
+                    ${PROJECT_SOURCE_DIR}/DirectionalLight.cpp)
     
 set(PROJECT_INCLUDE_DIR 
     ${PROJECT_DIR}/include
