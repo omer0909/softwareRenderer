@@ -14,10 +14,6 @@ Quaternion::Quaternion(Vector3 const &euler)
 	j = c.x * s.y * c.z + s.x * c.y * s.z;
 }
 
-Quaternion::Quaternion(float _i, float _j, float _k, float _w)
-    : i(_i), j(_j), k(_k), w(_w)
-{
-}
 
 Quaternion Quaternion::operator*(Quaternion const &a) const
 {
@@ -39,8 +35,6 @@ Vector3 Quaternion::operator*(Vector3 const &v) const
 	return Vector3(result.i, result.j, result.k);
 }
 
-Quaternion::Quaternion() {}
-
 Quaternion::Quaternion(Quaternion const &other) { *this = other; }
 
 Quaternion &Quaternion::operator=(Quaternion const &other)
@@ -51,10 +45,6 @@ Quaternion &Quaternion::operator=(Quaternion const &other)
 	w = other.w;
 	return *this;
 }
-
-Quaternion::~Quaternion() {}
-
-Quaternion Quaternion::Zero() { return Quaternion(0, 0, 0, 1); }
 
 Quaternion Quaternion::Normalized()
 {

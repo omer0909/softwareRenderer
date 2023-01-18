@@ -13,16 +13,12 @@ set(PROJECT_DIR ${CMAKE_SOURCE_DIR})
 set(PROJECT_INCLUDE_DIR ${PROJECT_DIR}/include)
 set(PROJECT_SOURCE_DIR ${PROJECT_DIR}/src)
 set(PROJECT_SOURCES ${PROJECT_SOURCE_DIR}/main.cpp
-                    ${PROJECT_SOURCE_DIR}/Camera.cpp
                     ${PROJECT_SOURCE_DIR}/Mesh.cpp
                     ${PROJECT_SOURCE_DIR}/Object.cpp
                     ${PROJECT_SOURCE_DIR}/obj_read.cpp
                     ${PROJECT_SOURCE_DIR}/Quaternion.cpp
                     ${PROJECT_SOURCE_DIR}/Render.cpp
                     ${PROJECT_SOURCE_DIR}/Scene.cpp
-                    ${PROJECT_SOURCE_DIR}/Transform.cpp
-                    ${PROJECT_SOURCE_DIR}/Vector2.cpp
-                    ${PROJECT_SOURCE_DIR}/Vector3.cpp
                     ${PROJECT_SOURCE_DIR}/Window.cpp
                     ${PROJECT_SOURCE_DIR}/Light.cpp
                     ${PROJECT_SOURCE_DIR}/PointLight.cpp

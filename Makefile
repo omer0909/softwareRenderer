@@ -2,7 +2,7 @@ NAME = out
 CPPFLAGS = -Wall -Wextra -Wshadow -std=c++20 -MD -Ofast
 LIBS = -lSDL2 -lpng
 CC = g++
-SRC = Camera.cpp  main.cpp  Mesh.cpp  Object.cpp  obj_read.cpp  Quaternion.cpp  Vector2.cpp  Vector3.cpp  Window.cpp Transform.cpp Object.cpp Render.cpp Scene.cpp Light.cpp PointLight.cpp DirectionalLight.cpp
+SRC = main.cpp Mesh.cpp Object.cpp obj_read.cpp Quaternion.cpp Window.cpp Object.cpp Render.cpp Scene.cpp Light.cpp PointLight.cpp DirectionalLight.cpp
 INCDIR = include /usr/include/SDL2
 SRCDIR = src
 

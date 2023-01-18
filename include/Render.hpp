@@ -57,4 +57,5 @@ class Render
 	RenderData *data;
 	std::thread *threads;
 	Window &window;
+	Vector3 *pixelDir;
 };

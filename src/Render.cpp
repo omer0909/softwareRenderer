@@ -31,6 +31,17 @@ Render::Render(Window &_window) : window(_window)
 	threads = new std::thread[THREAD_NUMBER];
 
 	clear_zBuffer();
+
+	pixelDir = new Vector3[with * height];
+	int withI = static_cast<int>(with);
+	int heightI = static_cast<int>(height);
+	for (int x = 0; x < withI; x++) {
+		for (int y = 0; y < heightI; y++) {
+			pixelDir[y * with + x] =
+			    Vector3(halfWith - x, halfHeight - y, height)
+				.Normalized();
+		}
+	}
 }
 
 Render::~Render()
@@ -38,6 +49,7 @@ Render::~Render()
 	for (unsigned int i = 0; i < THREAD_NUMBER; i++) {
 		DeleteRenderData(data[i]);
 	}
+	delete[] pixelDir;
 }
 
 inline Vector3 transform(Vector3 const &pos, Transform const &transform)
@@ -146,18 +158,16 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 			add[i] = a.x - a.y * inclination[i];
 		}
 
-		const int aMaxY = std::min((int)tris2d[1].y, (int)height - 1);
-		for (int y = std::max(0, (int)tris2d[0].y + 1); y <= aMaxY;
-		     y++) {
+		const int aMaxY = std::min(tris2d[1].y, (float)height - 1);
+		for (int y = std::max(0.0f, tris2d[0].y + 1); y <= aMaxY; y++) {
 			const int a = right;
 			const int b = !right;
 
 			const float max = y * inclination[a] + add[a];
 			const float min = y * inclination[b] + add[b];
 
-			const int aMaxX = std::min((int)max, (int)with - 1);
-			for (int x = std::max(0, (int)min + 1); x <= aMaxX;
-			     x++) {
+			const int aMaxX = std::min(max, (float)with - 1);
+			for (int x = std::max(0.0f, min + 1); x <= aMaxX; x++) {
 				const unsigned int index = y * with + x;
 
 				const Vector3 dir =
@@ -198,24 +208,19 @@ void Render::RenderObject(Object const &object, RenderData &_data)
 			}
 		}
 
-		const int bMaxY = std::min((int)tris2d[2].y, (int)height - 1);
-		for (int y = std::max(0, (int)tris2d[1].y + 1); y <= bMaxY;
-		     y++) {
+		const int bMaxY = std::min(tris2d[2].y, (float)height - 1);
+		for (int y = std::max(0.0f, tris2d[1].y + 1); y <= bMaxY; y++) {
 			const int a = right + 1;
 			const int b = !right + 1;
 
 			const float max = y * inclination[b] + add[b];
 			const float min = y * inclination[a] + add[a];
 
-			const int bMaxX = std::min((int)max, (int)with - 1);
-			for (int x = std::max(0, (int)min + 1); x <= bMaxX;
-			     x++) {
+			const int bMaxX = std::min(max, (float)with - 1);
+			for (int x = std::max(0.0f, min + 1); x <= bMaxX; x++) {
 				const unsigned int index = y * with + x;
 
-				const Vector3 dir =
-				    Vector3(halfWith - x, halfHeight - y,
-					    height)
-					.Normalized();
+				const Vector3 dir = pixelDir[index];
 
 				const Vector3 q =
 				    Vector3::CrossProduct(rov0, dir);
@@ -273,7 +278,7 @@ static inline int RoundToInt(float value)
 	return static_cast<int>(value);
 }
 
-int normalToColor(Vector3 const &normal)
+inline int normalToColor(Vector3 const &normal)
 {
 	return ((int)((normal.x + 1) * 127) +
 		((int)((normal.y + 1) * 127) << 16) +
@@ -294,8 +299,8 @@ inline Vector3 camTransform(Vector3 const &pos)
 	return nPos;
 }
 
-bool IntersectTriangle(Vector3 const &orig, Vector3 const &dir,
-		       const Vector3 *tris, float &distance, Vector2 &uv)
+inline bool IntersectTriangle(Vector3 const &orig, Vector3 const &dir,
+			      const Vector3 *tris, float &distance, Vector2 &uv)
 {
 
 	const Vector3 edge1 = tris[1] - tris[0];
@@ -336,7 +341,7 @@ bool IntersectTriangle(Vector3 const &orig, Vector3 const &dir,
 	return true;
 }
 
-bool LightEffect(Vector3 const &lPos, Vector3 const &dir, float distance)
+inline bool LightEffect(Vector3 const &lPos, Vector3 const &dir, float distance)
 {
 	Scene &scene = Scene::Get();
 
@@ -354,20 +359,18 @@ bool LightEffect(Vector3 const &lPos, Vector3 const &dir, float distance)
 	return false;
 }
 
-unsigned int FloatToColor(float val)
+inline unsigned int FloatToColor(float val)
 {
 	unsigned int color = val * 127;
 	return color | color << 8 | color << 16 | 0xFF000000;
 }
 
-Vector3 Reflection(Vector3 const &ray, Vector3 const &ground)
+inline Vector3 Reflection(Vector3 const &ray, Vector3 const &ground)
 {
 	const float length = Vector3::DotProduct(ray, ground);
 	const Vector3 center = ground * length;
 	return (center * 2) - ray;
 }
-
-void CalculateDirectionalLightDepth() {}
 
 void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			    unsigned int end)
@@ -400,9 +403,8 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			RenderData &found = _data[search];
 			(void)found;
 
-			const Vector3 dir = Vector3(halfWith - (int)x,
-						    halfHeight - (int)y, height)
-						.Normalized();
+			const Vector3 dir = pixelDir[index];
+
 			Vector3 pos = dir * distance;
 
 			Vector3 normal = TrisLerp(found.trisData[index].normals,

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <SDL.h>
-#include <png.h>
 #include <iostream>
+#include <png.h>
 
 class Window
 {
@@ -13,16 +13,33 @@ class Window
 	{
 		virtual const char *What() const throw();
 	};
-	unsigned int *GetPixels() const;
-	void UpdateSurface();
-	unsigned int GetXSize() const;
-	unsigned int GetYSize() const;
 
-	int Get_pixel(unsigned int x, unsigned int y) const;
-	void SetPixel(unsigned int x, unsigned int y, int color);
-	const std::string &GetName();
+	inline unsigned int *GetPixels() const { return _window_pixels; }
+
+	inline void UpdateSurface() { SDL_UpdateWindowSurface(_window); }
+
+	inline unsigned int GetXSize() const { return _width; }
+	inline unsigned int GetYSize() const { return _height; }
+
+	inline int Get_pixel(unsigned int x, unsigned int y) const
+	{
+		return _window_pixels[y * _width + x];
+	}
+
+	inline void SetPixel(unsigned int x, unsigned int y, int color)
+	{
+		_window_pixels[y * _width + x] = color;
+	}
+
+	const std::string &GetName() { return _name; }
+
 	void Events();
-	void Clear(int color);
+
+	inline void Clear(int color)
+	{
+		for (unsigned int i = 0; i < _width * _height; i++)
+			_window_pixels[i] = color;
+	}
 
       private:
 	SDL_Window *_window;

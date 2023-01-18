@@ -3,7 +3,7 @@
 template <typename T> class Singleton
 {
       public:
-	static T &Get()
+	inline static T &Get()
 	{
 		static T instance;
 		return instance;

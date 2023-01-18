@@ -5,8 +5,8 @@
 class Camera
 {
       public:
-	Camera();
-	~Camera();
+	inline Camera() {}
+	inline ~Camera() {}
 	Transform transform;
 
 	static constexpr float minView = 0.3f;
