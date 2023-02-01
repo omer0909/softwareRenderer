@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Image.hpp>
 #include <Scene.hpp>
 #include <Window.hpp>
 #include <limits>
@@ -28,16 +29,13 @@ struct RenderData {
 	unsigned int faces_end;
 };
 
-class Render
-{
-      private:
+class Render {
+   private:
 	Vector2 worldToScreenPoint(Vector3 const &pos);
 	void RenderObject(Object const &object, RenderData &_data);
-	bool controlFunctionPoint(Vector2 const &a, Vector2 const &b,
-				  Vector2 const &point);
+	bool controlFunctionPoint(Vector2 const &a, Vector2 const &b, Vector2 const &point);
 	void clear_zBuffer();
-	void CalculatePixel(RenderData *data, unsigned int start,
-			    unsigned int end);
+	void CalculatePixel(RenderData *data, unsigned int start, unsigned int end);
 	unsigned int height;
 	unsigned int with;
 	int halfHeight;
@@ -47,7 +45,7 @@ class Render
 	float wallSlope;
 	float ceilSlope;
 
-      public:
+   public:
 	Render(Window &_window);
 	Render(const Render &) = delete;
 	Render &operator=(const Render &) = delete;

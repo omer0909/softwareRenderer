@@ -2,8 +2,7 @@
 #include <obj_read.hpp>
 
 static int save_png(std::string const &filename, int width, int height,
-		    unsigned char *data)
-{
+                    unsigned char *data) {
 	int i = 0;
 	int r = 0;
 	FILE *fp = NULL;
@@ -13,14 +12,12 @@ static int save_png(std::string const &filename, int width, int height,
 
 	fp = fopen(filename.c_str(), "wb");
 
-	png_ptr =
-	    png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
 	info_ptr = png_create_info_struct(png_ptr);
 
 	png_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_RGBA,
-		     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE,
-		     PNG_FILTER_TYPE_BASE);
+	             PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 	row_pointers = (png_bytep *)malloc(sizeof(png_bytep) * height);
 	for (i = 0; i < height; ++i) {
 		row_pointers[i] = data + i * width * 4;
@@ -47,16 +44,14 @@ static int save_png(std::string const &filename, int width, int height,
 
 // 0xAARRGGBB
 // 0xAABBGGRR
-unsigned int screen_to_image(const unsigned int color)
-{
+unsigned int screen_to_image(const unsigned int color) {
 	int ag = color & 0xFF00FF00;
 	int r = (color & 0x00FF0000) >> 16;
 	int b = (color & 0x000000FF) << 16;
 	return ag | r | b;
 }
 
-void Events()
-{
+void Events() {
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 	float _deltaTime = Scene::Get().deltaTime;
 
@@ -78,15 +73,10 @@ void Events()
 		_cam.pos = _cam.pos - _cam.Up() * (moveSpeed * _deltaTime);
 
 	if (keystate[SDL_SCANCODE_LEFT])
-		_cam.rotation =
-		    _cam.rotation *
-		    (Quaternion(Vector3(0, -45 * ANGLE_TO_RADIAN, 0))
-			 .SMultiplay(_deltaTime * turnSpeed));
+		_cam.rotation = _cam.rotation * (Quaternion(Vector3(0, -45 * ANGLE_TO_RADIAN, 0)).SMultiplay(_deltaTime * turnSpeed));
 
 	if (keystate[SDL_SCANCODE_RIGHT])
-		_cam.rotation = _cam.rotation *
-				(Quaternion(Vector3(0, 45 * ANGLE_TO_RADIAN, 0))
-				     .SMultiplay(_deltaTime * turnSpeed));
+		_cam.rotation = _cam.rotation * (Quaternion(Vector3(0, 45 * ANGLE_TO_RADIAN, 0)).SMultiplay(_deltaTime * turnSpeed));
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
@@ -101,8 +91,7 @@ void Events()
 
 		if ((e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_p)) {
 			Window &_window = *Scene::Get().window;
-			unsigned int size =
-			    _window.GetYSize() * _window.GetXSize();
+			unsigned int size = _window.GetYSize() * _window.GetXSize();
 
 			unsigned int *image = new unsigned int[size];
 			unsigned int *screen = _window.GetPixels();
@@ -110,31 +99,26 @@ void Events()
 			for (unsigned int i = 0; i < size; i++)
 				image[i] = screen_to_image(screen[i]);
 
-			save_png("test.png", _window.GetXSize(),
-				 _window.GetYSize(),
-				 reinterpret_cast<unsigned char *>(image));
+			save_png("test.png", _window.GetXSize(), _window.GetYSize(), reinterpret_cast<unsigned char *>(image));
 			delete[] image;
 		}
 	}
 }
 
-[[gnu::noinline]] void DeltaTimeCalculate()
-{
+[[gnu::noinline]] void DeltaTimeCalculate() {
 	static auto start = std::chrono::system_clock::now();
 
 	auto now = std::chrono::system_clock::now();
 
 	std::chrono::duration<float> elapsed_seconds = now - start;
 
-	std::cout << static_cast<int>(1 / elapsed_seconds.count()) << " fps"
-		  << std::endl;
+	std::cout << static_cast<int>(1 / elapsed_seconds.count()) << " fps" << std::endl;
 
 	Scene::Get().deltaTime = elapsed_seconds.count();
 	start = now;
 }
 
-void JustRender(Render &render)
-{
+void JustRender(Render &render) {
 	render.View();
 	Window &_window = *Scene::Get().window;
 	unsigned int size = _window.GetYSize() * _window.GetXSize();
@@ -145,8 +129,7 @@ void JustRender(Render &render)
 	for (unsigned int i = 0; i < size; i++)
 		image[i] = screen_to_image(screen[i]);
 
-	save_png("test.png", _window.GetXSize(), _window.GetYSize(),
-		 reinterpret_cast<unsigned char *>(image));
+	save_png("test.png", _window.GetXSize(), _window.GetYSize(), reinterpret_cast<unsigned char *>(image));
 	delete[] image;
 	exit(0);
 }
@@ -154,43 +137,42 @@ void JustRender(Render &render)
 /*
 unsigned int nonColorGradient(int x)
 {
-	x /= 6;
+    x /= 6;
 
-	x /= 3;
-	x %= 256;
-	return x | x << 8 | x << 16;
+    x /= 3;
+    x %= 256;
+    return x | x << 8 | x << 16;
 }
 
 unsigned int colorGradient(int x)
 {
-	x /= 6;
+    x /= 6;
 
-	int extra = x % 3;
-	x /= 3;
-	x %= 256;
-	return x + (extra > 0 ? 1 : 0) | (x + (extra > 1 ? 1 : 0)) << 8 |
-	       x << 16;
+    int extra = x % 3;
+    x /= 3;
+    x %= 256;
+    return x + (extra > 0 ? 1 : 0) | (x + (extra > 1 ? 1 : 0)) << 8 |
+           x << 16;
 }
 */
-void UpdateAll()
-{
+void UpdateAll() {
 	/*
-		Window &window = *Scene::Get().window;
-		unsigned int halfHeight = HEIGHT / 2;
+	    Window &window = *Scene::Get().window;
+	    unsigned int halfHeight = HEIGHT / 2;
 
-		for (unsigned int y = 0; y < halfHeight; y++) {
-			for (unsigned int x = 0; x < WIDTH; x++) {
-				window.SetPixel(x, y, nonColorGradient(x));
-			}
-		}
-		for (unsigned int y = halfHeight; y < HEIGHT; y++) {
-			for (unsigned int x = 0; x < WIDTH; x++) {
-				window.SetPixel(x, y, colorGradient(x));
-			}
-		}
-		window.UpdateSurface();
-		Events();
-		return;
+	    for (unsigned int y = 0; y < halfHeight; y++) {
+	        for (unsigned int x = 0; x < WIDTH; x++) {
+	            window.SetPixel(x, y, nonColorGradient(x));
+	        }
+	    }
+	    for (unsigned int y = halfHeight; y < HEIGHT; y++) {
+	        for (unsigned int x = 0; x < WIDTH; x++) {
+	            window.SetPixel(x, y, colorGradient(x));
+	        }
+	    }
+	    window.UpdateSurface();
+	    Events();
+	    return;
 */
 	Render render(*Scene::Get().window);
 
@@ -203,11 +185,10 @@ void UpdateAll()
 	}
 }
 
-int main(int argc, char **argv)
-{
-	if (argc != 2) {
+int main(int argc, char **argv) {
+	if (argc != 2 && argc != 3) {
 		std::cout << "Argument syntax is: ./program file.obj"
-			  << std::endl;
+		          << std::endl;
 		return -1;
 	}
 
@@ -216,6 +197,9 @@ int main(int argc, char **argv)
 	Scene::Get().window = &_window;
 
 	Scene::Get().window = &_window;
+
+	if (argc == 3)
+		Scene::Get().matCap = Image(argv[2]);
 
 	Object object;
 	object.mesh = obj_read(argv[1]);

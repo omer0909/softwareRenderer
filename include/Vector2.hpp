@@ -19,9 +19,9 @@ class Vector2
 		return *this;
 	}
 
-	inline float Magnitude() { return std::sqrt(SqrMagnitude()); }
+	inline float Magnitude() const { return std::sqrt(SqrMagnitude()); }
 
-	inline float SqrMagnitude() { return x * x + y * y; }
+	inline float SqrMagnitude() const { return x * x + y * y; }
 
 	inline Vector2 operator+(const Vector2 &a) const
 	{
@@ -54,7 +54,7 @@ class Vector2
 		return Vector2(x * factor, y * factor);
 	}
 
-	inline Vector2 Normalized() { return *this / Magnitude(); }
+	inline Vector2 Normalized() const { return *this / Magnitude(); }
 
 	inline static float Distance(const Vector2 &a, const Vector2 &b)
 	{
@@ -66,12 +66,29 @@ class Vector2
 		return a.x * b.x + a.y * b.y;
 	}
 
+	inline static Vector2 Lerp(const Vector2 &a, const Vector2 &b, float value)
+	{
+		return (b - a) * value + a;
+	}
+
+	inline static Vector2 Zero() { return Vector2(0, 0); }
+
+	inline static Vector2 One() { return Vector2(1, 1); }
+
+	inline static Vector2 Up() { return Vector2(0, 1); }
+
+	inline static Vector2 Down() { return Vector2(0, -1); }
+
+	inline static Vector2 Right() { return Vector2(1, 0); }
+
+	inline static Vector2 Left() { return Vector2(-1, 0); }
+
 	float x;
 	float y;
 };
 
 inline std::ostream &operator<<(std::ostream &o, Vector2 const &v)
 {
-	o << "{" << v.x << ", " << v.y << " }" << std::endl;
+	o << "{" << v.x << ", " << v.y << "}" << std::endl;
 	return (o);
 }

@@ -77,11 +77,9 @@ class Vector3
 	}
 
 	inline static Vector3 Lerp(const Vector3 &a, const Vector3 &b,
-				   const float val)
+				   const float value)
 	{
-		const float val2 = 1 - val;
-		return {a.x * val + b.x * val2, a.y * val + b.y * val2,
-			a.z * val + b.z * val2};
+		return (b - a) * value + a;
 	}
 
 	inline static Vector3 Zero() { return Vector3(0, 0, 0); }

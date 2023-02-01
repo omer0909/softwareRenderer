@@ -1,12 +1,9 @@
 #include <Quaternion.hpp>
 #include <cmath>
 
-Quaternion::Quaternion(Vector3 const &euler)
-{
-	const Vector3 c(std::cos(euler.z * 0.5), std::cos(euler.y * 0.5),
-		  std::cos(euler.x * 0.5));
-	const Vector3 s(std::sin(euler.z * 0.5), std::sin(euler.y * 0.5),
-		  std::sin(euler.x * 0.5));
+Quaternion::Quaternion(Vector3 const &euler) {
+	const Vector3 c(std::cos(euler.z * 0.5), std::cos(euler.y * 0.5), std::cos(euler.x * 0.5));
+	const Vector3 s(std::sin(euler.z * 0.5), std::sin(euler.y * 0.5), std::sin(euler.x * 0.5));
 
 	w = c.x * c.y * c.z + s.x * s.y * s.z;
 	i = c.x * c.y * s.z - s.x * s.y * c.z;
@@ -14,9 +11,7 @@ Quaternion::Quaternion(Vector3 const &euler)
 	j = c.x * s.y * c.z + s.x * c.y * s.z;
 }
 
-
-Quaternion Quaternion::operator*(Quaternion const &a) const
-{
+Quaternion Quaternion::operator*(Quaternion const &a) const {
 	Quaternion qr;
 
 	qr.i = (w * a.i) + (i * a.w) + (j * a.k) - (k * a.j);
@@ -28,8 +23,7 @@ Quaternion Quaternion::operator*(Quaternion const &a) const
 
 Quaternion Quaternion::operator-() const { return Quaternion(-i, -j, -k, w); }
 
-Vector3 Quaternion::operator*(Vector3 const &v) const
-{
+Vector3 Quaternion::operator*(Vector3 const &v) const {
 	Quaternion result(v.x, v.y, v.z, 0);
 	result = (*this * result) * -(*this);
 	return Vector3(result.i, result.j, result.k);
@@ -37,8 +31,7 @@ Vector3 Quaternion::operator*(Vector3 const &v) const
 
 Quaternion::Quaternion(Quaternion const &other) { *this = other; }
 
-Quaternion &Quaternion::operator=(Quaternion const &other)
-{
+Quaternion &Quaternion::operator=(Quaternion const &other) {
 	i = other.i;
 	j = other.j;
 	k = other.k;
@@ -46,20 +39,16 @@ Quaternion &Quaternion::operator=(Quaternion const &other)
 	return *this;
 }
 
-Quaternion Quaternion::Normalized()
-{
+Quaternion Quaternion::Normalized() {
 	const float distance = 1.0f / std::sqrt(i * i + j * j + k * k + w * w);
-	return Quaternion(i * distance, j * distance, k * distance,
-			  w * distance);
+	return Quaternion(i * distance, j * distance, k * distance, w * distance);
 }
 
 Quaternion Quaternion::SLerp(const Quaternion &q1, const Quaternion &q2,
-			     float val)
-{
+                             float val) {
 	Quaternion qr;
 
-	const float dotproduct =
-	    q1.i * q2.i + q1.j * q2.j + q1.k * q2.k + q1.w * q2.w;
+	const float dotproduct = q1.i * q2.i + q1.j * q2.j + q1.k * q2.k + q1.w * q2.w;
 	float theta, st, sut, sout, coeff1, coeff2;
 
 	// val *= 0.5f;
@@ -83,8 +72,7 @@ Quaternion Quaternion::SLerp(const Quaternion &q1, const Quaternion &q2,
 }
 
 Quaternion Quaternion::Lerp(const Quaternion &q1, const Quaternion &q2,
-			    const float val)
-{
+                            const float val) {
 	Quaternion qr;
 	const float val_ = 1.0f - val;
 	qr.i = val_ * q1.i + val * q2.i;
@@ -94,8 +82,7 @@ Quaternion Quaternion::Lerp(const Quaternion &q1, const Quaternion &q2,
 	return qr.Normalized();
 }
 
-Quaternion Quaternion::operator*(float val) const
-{
+Quaternion Quaternion::operator*(float val) const {
 	Quaternion qr;
 	const float val_ = 1.0f - val;
 	qr.i = val * i;
@@ -105,8 +92,7 @@ Quaternion Quaternion::operator*(float val) const
 	return qr.Normalized();
 }
 
-Quaternion Quaternion::SMultiplay(float val)
-{
+Quaternion Quaternion::SMultiplay(float val) {
 	Quaternion qr;
 
 	float dotproduct = 0 * i + 0 * j + 0 * k + 1 * w;
@@ -132,8 +118,7 @@ Quaternion Quaternion::SMultiplay(float val)
 	return qr.Normalized();
 }
 
-Vector3 Quaternion::ToEuler() const
-{
+Vector3 Quaternion::ToEuler() const {
 	Vector3 angles;
 
 	float sinr_cosp = 2 * (w * i + j * k);
@@ -151,9 +136,7 @@ Vector3 Quaternion::ToEuler() const
 	return angles;
 }
 
-std::ostream &operator<<(std::ostream &o, Quaternion const &q)
-{
-	o << "{" << q.i << ", " << q.j << ", " << q.k << ", " << q.w << " }"
-	  << std::endl;
+std::ostream &operator<<(std::ostream &o, Quaternion const &q) {
+	o << "{" << q.i << ", " << q.j << ", " << q.k << ", " << q.w << " }" << std::endl;
 	return (o);
 }

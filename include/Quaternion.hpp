@@ -2,13 +2,11 @@
 
 #include <Vector3.hpp>
 
-class Quaternion
-{
-      public:
+class Quaternion {
+   public:
 	inline Quaternion() {}
 	inline Quaternion(float _i, float _j, float _k, float _w)
-	    : i(_i), j(_j), k(_k), w(_w)
-	{
+	    : i(_i), j(_j), k(_k), w(_w) {
 	}
 
 	Quaternion(const Vector3 &euler);
@@ -27,12 +25,10 @@ class Quaternion
 	float k;
 	float w;
 	inline static Quaternion Zero() { return Quaternion(0, 0, 0, 1); }
-	static Quaternion SLerp(const Quaternion &a, const Quaternion &b,
-				float val);
-	static Quaternion Lerp(const Quaternion &a, const Quaternion &b,
-			       const float val);
+	static Quaternion SLerp(const Quaternion &a, const Quaternion &b, float val);
+	static Quaternion Lerp(const Quaternion &a, const Quaternion &b, const float val);
 
-      private:
+   private:
 	Quaternion Normalized();
 };
 

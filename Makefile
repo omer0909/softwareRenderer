@@ -1,8 +1,8 @@
 NAME = out
-CPPFLAGS = -Wall -Wextra -Wshadow -std=c++20 -MD -Ofast
+CPPFLAGS = -Wall -Wextra -Wshadow -std=c++20 -MD -Ofast -flto
 LIBS = -lSDL2 -lpng
 CC = g++
-SRC = main.cpp Mesh.cpp Object.cpp obj_read.cpp Quaternion.cpp Window.cpp Object.cpp Render.cpp Scene.cpp Light.cpp PointLight.cpp DirectionalLight.cpp
+SRC = main.cpp Mesh.cpp Object.cpp obj_read.cpp Quaternion.cpp Window.cpp Object.cpp Render.cpp Scene.cpp Light.cpp PointLight.cpp DirectionalLight.cpp Image.cpp
 INCDIR = include /usr/include/SDL2
 SRCDIR = src
 

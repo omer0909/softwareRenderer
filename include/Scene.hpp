@@ -1,16 +1,16 @@
 #pragma once
 
 #include <Camera.hpp>
+#include <DirectionalLight.hpp>
+#include <Image.hpp>
 #include <Object.hpp>
-#include <vector>
+#include <PointLight.hpp>
 #include <Singleton.hpp>
 #include <Window.hpp>
-#include <PointLight.hpp>
-#include <DirectionalLight.hpp>
+#include <vector>
 
-class Scene : public Singleton<Scene>
-{
-      public:
+class Scene : public Singleton<Scene> {
+   public:
 	Scene();
 	~Scene();
 	std::vector<Object> objects;
@@ -19,4 +19,5 @@ class Scene : public Singleton<Scene>
 	Camera camera;
 	Window *window;
 	float deltaTime;
+	Image matCap;
 };
