@@ -196,7 +196,6 @@ int main(int argc, char **argv) {
 
 	Scene::Get().window = &_window;
 
-	Scene::Get().window = &_window;
 
 	if (argc == 3)
 		Scene::Get().matCap = Image(argv[2]);

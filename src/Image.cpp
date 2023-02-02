@@ -155,8 +155,6 @@ Image::Image(std::string const &file) {
 
 	png_read_update_info(png, info);
 
-	if (data) throw FileCantReadException();
-
 	color_t *BGR_data = new color_t[size];
 
 	png_bytep *row_pointers = ImageToRow(BGR_data, width, height);

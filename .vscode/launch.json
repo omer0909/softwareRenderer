@@ -5,7 +5,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/out",
-			"args": ["./test.obj"],
+			"args": ["./test.obj", "matcap.png"],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],
