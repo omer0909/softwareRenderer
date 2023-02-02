@@ -2,14 +2,13 @@
 #include <fstream>
 #include <iostream>
 #include <list>
-#include <sstream>
-
 #include <obj_read.hpp>
+#include <sstream>
 
 using namespace std;
 
-template <typename T> void listCopyToArray(list<T> &src, T *&arr)
-{
+template <typename T>
+void listCopyToArray(list<T> &src, T *&arr) {
 	delete[] arr;
 	arr = new T[src.size()];
 	int i = 0;
@@ -18,8 +17,7 @@ template <typename T> void listCopyToArray(list<T> &src, T *&arr)
 	}
 }
 
-Mesh obj_read(std::string name)
-{
+Mesh obj_read(std::string name) {
 	fstream file;
 
 	file.open(name, ios_base::in);
@@ -86,15 +84,25 @@ Mesh obj_read(std::string name)
 		getline(file, line);
 	while (!line.compare(0, 2, "f ")) {
 		stringstream ssline(line);
+
+		std::vector<std::string> polygone;
 		string tmp;
-		ssline >> tmp;
-		for (int i = 0; i < 3; i++) {
-			getline(ssline, tmp, '/');
-			faces_vertices.push_back(stoi(tmp) - 1);
-			getline(ssline, tmp, '/');
-			faces_uv.push_back(stoi(tmp) - 1);
-			getline(ssline, tmp, ' ');
-			faces_normals.push_back(stoi(tmp) - 1);
+		getline(ssline, tmp, ' ');
+		while (getline(ssline, tmp, ' '))
+			polygone.push_back(tmp);
+
+		for (unsigned int i = 1; i < polygone.size() - 1; i++) {
+			unsigned int tris[3] = {0, i, i + 1};
+			for (int j = 0; j < 3; j++) {
+				stringstream ssTris(polygone[tris[j]]);
+
+				getline(ssTris, tmp, '/');
+				faces_vertices.push_back(stoi(tmp) - 1);
+				getline(ssTris, tmp, '/');
+				faces_uv.push_back(stoi(tmp) - 1);
+				getline(ssTris, tmp, ' ');
+				faces_normals.push_back(stoi(tmp) - 1);
+			}
 		}
 		getline(file, line);
 	}

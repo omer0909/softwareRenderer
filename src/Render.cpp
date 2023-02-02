@@ -371,14 +371,14 @@ void Render::CalculatePixel(RenderData *_data, unsigned int start,
 			color /= std::max(1.0f, lDistance * lDistance * lDistance);
 
 			//-----phong-reflection----
-			// if (inShadow && Vector3::DotProduct(lDir, Reflection(dir, gNormal)) > 1 - 0.02f / lDistance)
-			// 	color = 1;
-			// window.SetPixel(x, y, FloatToColor(color));
+			if (inShadow && Vector3::DotProduct(lDir, Reflection(dir, gNormal)) > 1 - 0.02f / lDistance)
+				color = 1;
+			window.SetPixel(x, y, FloatToColor(color));
 
 			//-----------MatCap---------
-			Image const &matCap = scene.matCap;
-			Vector2 coord = Vector2(-normal.x + 1, -normal.y + 1) * 0.5f;
-			window.SetPixel(x, y, matCap.GetPixel(coord.x * matCap.width, coord.y * matCap.height) | 0xFF000000);
+			// Image const &matCap = scene.matCap;
+			// Vector2 coord = Vector2(-normal.x + 1, -normal.y + 1) * 0.5f;
+			// window.SetPixel(x, y, matCap.GetPixel(coord.x * matCap.width, coord.y * matCap.height) | 0xFF000000);
 
 			//-----------shadow---------
 			// if (inShadow && LightEffect(lPos, lDir, lDistance))

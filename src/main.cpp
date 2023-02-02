@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
 	    Quaternion(Vector3(0, 180 * ANGLE_TO_RADIAN, 0));
 	object.transform.pos = Vector3::Zero();
 
-	PointLight pointLight = PointLight();
+	PointLight pointLight;
 	pointLight.pos = Vector3(1, 0, -1);
 	pointLight.intensity = 100;
 	Scene::Get().pointLights.push_back(pointLight);
